@@ -1,0 +1,206 @@
+   1              		.cpu arm7tdmi
+   2              		.fpu softvfp
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 6
+  10              		.eabi_attribute 18, 4
+  11              		.file	"undef.c"
+  21              	.Ltext0:
+  22              		.file 1 "../undef.c"
+ 1874              		.align	2
+ 1875              		.global	exception_ISR
+ 1877              	exception_ISR:
+ 1878              	.LFB0:
+   1:../undef.c    **** /*********************************************************************************************
+   2:../undef.c    **** * Fichero:		timer.c
+   3:../undef.c    **** * Autor:
+   4:../undef.c    **** * Descrip:		funciones de control del timer0 del s3c44b0x
+   5:../undef.c    **** * Version:
+   6:../undef.c    **** *********************************************************************************************/
+   7:../undef.c    **** 
+   8:../undef.c    **** /*--- ficheros de cabecera ---*/
+   9:../undef.c    **** #include "44b.h"
+  10:../undef.c    **** #include "44blib.h"
+  11:../undef.c    **** 
+  12:../undef.c    **** 
+  13:../undef.c    **** /*--- declaracion de funciones ---*/
+  14:../undef.c    **** void exception_ISR(void) __attribute__((interrupt("UNDEF")));
+  15:../undef.c    **** void exception_init(void);
+  16:../undef.c    **** 
+  17:../undef.c    **** /*--- codigo de las funciones ---*/
+  18:../undef.c    **** void exception_ISR(void)
+  19:../undef.c    **** {
+ 1879              		.loc 1 19 0
+ 1880              		.cfi_startproc
+ 1881              		@ ARM Exception Handler.
+ 1882              		@ args = 0, pretend = 0, frame = 0
+ 1883              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1884 0000 04C02DE5 		str	ip, [sp, #-4]!
+ 1885 0004 0DC0A0E1 		mov	ip, sp
+ 1886              	.LCFI0:
+ 1887              		.cfi_def_cfa_register 12
+ 1888 0008 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 1889 000c 04B04CE2 		sub	fp, ip, #4
+ 1890              		.cfi_offset 14, -8
+ 1891              		.cfi_offset 13, -12
+ 1892              		.cfi_offset 11, -16
+ 1893              	.LCFI1:
+ 1894              		.cfi_def_cfa 11, 4
+  20:../undef.c    **** 	//parpadear=1;
+  21:../undef.c    **** 	//Timer2_Empezar();
+  22:../undef.c    **** }
+ 1895              		.loc 1 22 0
+ 1896 0010 0CD04BE2 		sub	sp, fp, #12
+ 1897 0014 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 1898 0018 04C09DE4 		ldmfd	sp!, {ip}
+ 1899 001c 0EF0B0E1 		movs	pc, lr
+ 1900              		.cfi_endproc
+ 1901              	.LFE0:
+ 1903              		.align	2
+ 1904              		.global	exception_init
+ 1906              	exception_init:
+ 1907              	.LFB1:
+  23:../undef.c    **** 
+  24:../undef.c    **** void exception_init(void)
+  25:../undef.c    **** {
+ 1908              		.loc 1 25 0
+ 1909              		.cfi_startproc
+ 1910              		@ Function supports interworking.
+ 1911              		@ args = 0, pretend = 0, frame = 0
+ 1912              		@ frame_needed = 1, uses_anonymous_args = 0
+ 1913 0020 0DC0A0E1 		mov	ip, sp
+ 1914              	.LCFI2:
+ 1915              		.cfi_def_cfa_register 12
+ 1916 0024 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 1917 0028 04B04CE2 		sub	fp, ip, #4
+ 1918              		.cfi_offset 14, -8
+ 1919              		.cfi_offset 13, -12
+ 1920              		.cfi_offset 11, -16
+ 1921              	.LCFI3:
+ 1922              		.cfi_def_cfa 11, 4
+  26:../undef.c    **** 
+  27:../undef.c    **** 	//se escribe la direccion de la funcion en el elemento correspondiente a undef
+  28:../undef.c    **** 	//en la tabla de vectores
+  29:../undef.c    **** 
+  30:../undef.c    **** 	pISR_UNDEF = (unsigned) exception_ISR;
+ 1923              		.loc 1 30 0
+ 1924 002c C4309FE5 		ldr	r3, .L3
+ 1925 0030 C4209FE5 		ldr	r2, .L3+4
+ 1926 0034 002083E5 		str	r2, [r3, #0]
+  31:../undef.c    **** 	pISR_RESET = (unsigned) exception_ISR;
+ 1927              		.loc 1 31 0
+ 1928 0038 C0309FE5 		ldr	r3, .L3+8
+ 1929 003c B8209FE5 		ldr	r2, .L3+4
+ 1930 0040 002083E5 		str	r2, [r3, #0]
+  32:../undef.c    **** 	pISR_SWI = (unsigned) exception_ISR;
+ 1931              		.loc 1 32 0
+ 1932 0044 B8309FE5 		ldr	r3, .L3+12
+ 1933 0048 AC209FE5 		ldr	r2, .L3+4
+ 1934 004c 002083E5 		str	r2, [r3, #0]
+  33:../undef.c    **** 	pISR_PABORT = (unsigned) exception_ISR;
+ 1935              		.loc 1 33 0
+ 1936 0050 B0309FE5 		ldr	r3, .L3+16
+ 1937 0054 A0209FE5 		ldr	r2, .L3+4
+ 1938 0058 002083E5 		str	r2, [r3, #0]
+  34:../undef.c    **** 	pISR_DABORT = (unsigned) exception_ISR;
+ 1939              		.loc 1 34 0
+ 1940 005c A8309FE5 		ldr	r3, .L3+20
+ 1941 0060 94209FE5 		ldr	r2, .L3+4
+ 1942 0064 002083E5 		str	r2, [r3, #0]
+  35:../undef.c    **** 	pISR_RESERVED = (unsigned) exception_ISR;
+ 1943              		.loc 1 35 0
+ 1944 0068 A0309FE5 		ldr	r3, .L3+24
+ 1945 006c 88209FE5 		ldr	r2, .L3+4
+ 1946 0070 002083E5 		str	r2, [r3, #0]
+  36:../undef.c    **** 	pISR_FIQ = (unsigned) exception_ISR;
+ 1947              		.loc 1 36 0
+ 1948 0074 98309FE5 		ldr	r3, .L3+28
+ 1949 0078 7C209FE5 		ldr	r2, .L3+4
+ 1950 007c 002083E5 		str	r2, [r3, #0]
+  37:../undef.c    **** 	pISR_ADC = (unsigned) exception_ISR;
+ 1951              		.loc 1 37 0
+ 1952 0080 90309FE5 		ldr	r3, .L3+32
+ 1953 0084 70209FE5 		ldr	r2, .L3+4
+ 1954 0088 002083E5 		str	r2, [r3, #0]
+  38:../undef.c    **** 	pISR_RTC = (unsigned) exception_ISR;
+ 1955              		.loc 1 38 0
+ 1956 008c 88309FE5 		ldr	r3, .L3+36
+ 1957 0090 64209FE5 		ldr	r2, .L3+4
+ 1958 0094 002083E5 		str	r2, [r3, #0]
+  39:../undef.c    **** 	pISR_UTXD1 = (unsigned) exception_ISR;
+ 1959              		.loc 1 39 0
+ 1960 0098 80309FE5 		ldr	r3, .L3+40
+ 1961 009c 58209FE5 		ldr	r2, .L3+4
+ 1962 00a0 002083E5 		str	r2, [r3, #0]
+  40:../undef.c    **** 	pISR_UTXD0 = (unsigned) exception_ISR;
+ 1963              		.loc 1 40 0
+ 1964 00a4 78309FE5 		ldr	r3, .L3+44
+ 1965 00a8 4C209FE5 		ldr	r2, .L3+4
+ 1966 00ac 002083E5 		str	r2, [r3, #0]
+  41:../undef.c    **** 	pISR_SIO = (unsigned) exception_ISR;
+ 1967              		.loc 1 41 0
+ 1968 00b0 70309FE5 		ldr	r3, .L3+48
+ 1969 00b4 40209FE5 		ldr	r2, .L3+4
+ 1970 00b8 002083E5 		str	r2, [r3, #0]
+  42:../undef.c    **** 	pISR_IIC = (unsigned) exception_ISR;
+ 1971              		.loc 1 42 0
+ 1972 00bc 68309FE5 		ldr	r3, .L3+52
+ 1973 00c0 34209FE5 		ldr	r2, .L3+4
+ 1974 00c4 002083E5 		str	r2, [r3, #0]
+  43:../undef.c    **** 	pISR_URXD1 = (unsigned) exception_ISR;
+ 1975              		.loc 1 43 0
+ 1976 00c8 60309FE5 		ldr	r3, .L3+56
+ 1977 00cc 28209FE5 		ldr	r2, .L3+4
+ 1978 00d0 002083E5 		str	r2, [r3, #0]
+  44:../undef.c    **** 	pISR_URXD0 = (unsigned) exception_ISR;
+ 1979              		.loc 1 44 0
+ 1980 00d4 58309FE5 		ldr	r3, .L3+60
+ 1981 00d8 1C209FE5 		ldr	r2, .L3+4
+ 1982 00dc 002083E5 		str	r2, [r3, #0]
+  45:../undef.c    **** 	pISR_UERR01 = (unsigned) exception_ISR;
+ 1983              		.loc 1 45 0
+ 1984 00e0 50309FE5 		ldr	r3, .L3+64
+ 1985 00e4 10209FE5 		ldr	r2, .L3+4
+ 1986 00e8 002083E5 		str	r2, [r3, #0]
+  46:../undef.c    **** 
+  47:../undef.c    **** }
+ 1987              		.loc 1 47 0
+ 1988 00ec 0CD04BE2 		sub	sp, fp, #12
+ 1989 00f0 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 1990 00f4 1EFF2FE1 		bx	lr
+ 1991              	.L4:
+ 1992              		.align	2
+ 1993              	.L3:
+ 1994 00f8 04FF7F0C 		.word	209714948
+ 1995 00fc 00000000 		.word	exception_ISR
+ 1996 0100 00FF7F0C 		.word	209714944
+ 1997 0104 08FF7F0C 		.word	209714952
+ 1998 0108 0CFF7F0C 		.word	209714956
+ 1999 010c 10FF7F0C 		.word	209714960
+ 2000 0110 14FF7F0C 		.word	209714964
+ 2001 0114 1CFF7F0C 		.word	209714972
+ 2002 0118 20FF7F0C 		.word	209714976
+ 2003 011c 24FF7F0C 		.word	209714980
+ 2004 0120 28FF7F0C 		.word	209714984
+ 2005 0124 2CFF7F0C 		.word	209714988
+ 2006 0128 30FF7F0C 		.word	209714992
+ 2007 012c 34FF7F0C 		.word	209714996
+ 2008 0130 38FF7F0C 		.word	209715000
+ 2009 0134 3CFF7F0C 		.word	209715004
+ 2010 0138 58FF7F0C 		.word	209715032
+ 2011              		.cfi_endproc
+ 2012              	.LFE1:
+ 2014              	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 undef.c
+C:\Users\a680182\AppData\Local\Temp\ccw4Km6s.s:1874   .text:00000000 $a
+C:\Users\a680182\AppData\Local\Temp\ccw4Km6s.s:1877   .text:00000000 exception_ISR
+C:\Users\a680182\AppData\Local\Temp\ccw4Km6s.s:1906   .text:00000020 exception_init
+C:\Users\a680182\AppData\Local\Temp\ccw4Km6s.s:1994   .text:000000f8 $d
+                     .debug_frame:00000010 $d
+
+NO UNDEFINED SYMBOLS

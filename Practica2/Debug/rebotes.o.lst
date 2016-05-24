@@ -1,0 +1,36 @@
+   1              		.cpu arm7tdmi
+   2              		.fpu softvfp
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 6
+  10              		.eabi_attribute 18, 4
+  11              		.file	"rebotes.c"
+  21              	.Ltext0:
+  22              		.file 1 "../rebotes.c"
+ 1875              		.align	2
+ 1878              	pulsado:
+ 1879 0000 00000000 		.space	4
+ 1880              		.global	gestionando
+ 1881              		.align	2
+ 1884              	gestionando:
+ 1885 0004 00000000 		.space	4
+ 1886              		.global	tiempoEspera
+ 1887              		.data
+ 1888              		.align	2
+ 1891              	tiempoEspera:
+ 1892 0000 80969800 		.word	10000000
+ 1893              		.text
+ 1894              	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 rebotes.c
+C:\Users\a680182\AppData\Local\Temp\ccsQcWXY.s:1878   .bss:00000000 pulsado
+C:\Users\a680182\AppData\Local\Temp\ccsQcWXY.s:1875   .bss:00000000 $d
+C:\Users\a680182\AppData\Local\Temp\ccsQcWXY.s:1884   .bss:00000004 gestionando
+C:\Users\a680182\AppData\Local\Temp\ccsQcWXY.s:1891   .data:00000000 tiempoEspera
+C:\Users\a680182\AppData\Local\Temp\ccsQcWXY.s:1888   .data:00000000 $d
+
+NO UNDEFINED SYMBOLS

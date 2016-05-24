@@ -1,0 +1,201 @@
+   1              		.cpu arm7tdmi
+   2              		.fpu softvfp
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 6
+  10              		.eabi_attribute 18, 4
+  11              		.file	"pila.c"
+  21              	.Ltext0:
+  22              		.file 1 "../pila.c"
+ 2690              		.align	2
+ 2693              	inicioPila:
+ 2694 0000 00EF7F0C 		.word	209710848
+ 2695              		.global	limite
+ 2696              		.align	2
+ 2699              	limite:
+ 2700 0004 00F07F0C 		.word	209711104
+ 2701              		.comm	actual,4,4
+ 2702              		.text
+ 2703              		.align	2
+ 2704              		.global	pila_Init
+ 2706              	pila_Init:
+ 2707              	.LFB0:
+   1:../pila.c     **** /*
+   2:../pila.c     ****  * pila.c
+   3:../pila.c     ****  *
+   4:../pila.c     ****  *  Created on: 31/10/2015
+   5:../pila.c     ****  *      Author: Jorge
+   6:../pila.c     ****  */
+   7:../pila.c     **** 
+   8:../pila.c     **** /*--- ficheros de cabecera ---*/
+   9:../pila.c     **** #include "44b.h"
+  10:../pila.c     **** #include "44blib.h"
+  11:../pila.c     **** #include <inttypes.h>
+  12:../pila.c     **** 
+  13:../pila.c     **** 
+  14:../pila.c     **** 
+  15:../pila.c     **** 
+  16:../pila.c     **** int inicioPila=_ISR_STARTADDRESS-0xf00-256;
+  17:../pila.c     **** int limite=_ISR_STARTADDRESS-0xf00;
+  18:../pila.c     **** int *actual;
+  19:../pila.c     **** 
+  20:../pila.c     **** 
+  21:../pila.c     **** /*--- declaracion de funciones ---*/
+  22:../pila.c     **** void push_debug(int ID_evento, int auxData);
+  23:../pila.c     **** void pila_Init();
+  24:../pila.c     **** int Timer0_Leer(void);
+  25:../pila.c     **** 
+  26:../pila.c     **** 
+  27:../pila.c     **** void pila_Init(){
+ 2708              		.loc 1 27 0
+ 2709              		.cfi_startproc
+ 2710              		@ Function supports interworking.
+ 2711              		@ args = 0, pretend = 0, frame = 0
+ 2712              		@ frame_needed = 1, uses_anonymous_args = 0
+ 2713 0000 0DC0A0E1 		mov	ip, sp
+ 2714              	.LCFI0:
+ 2715              		.cfi_def_cfa_register 12
+ 2716 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 2717 0008 04B04CE2 		sub	fp, ip, #4
+ 2718              		.cfi_offset 14, -8
+ 2719              		.cfi_offset 13, -12
+ 2720              		.cfi_offset 11, -16
+ 2721              	.LCFI1:
+ 2722              		.cfi_def_cfa 11, 4
+  28:../pila.c     **** 	actual=_ISR_STARTADDRESS-0xf00-256;
+ 2723              		.loc 1 28 0
+ 2724 000c 10309FE5 		ldr	r3, .L2
+ 2725 0010 10209FE5 		ldr	r2, .L2+4
+ 2726 0014 002083E5 		str	r2, [r3, #0]
+  29:../pila.c     **** }
+ 2727              		.loc 1 29 0
+ 2728 0018 0CD04BE2 		sub	sp, fp, #12
+ 2729 001c 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 2730 0020 1EFF2FE1 		bx	lr
+ 2731              	.L3:
+ 2732              		.align	2
+ 2733              	.L2:
+ 2734 0024 00000000 		.word	actual
+ 2735 0028 00EF7F0C 		.word	209710848
+ 2736              		.cfi_endproc
+ 2737              	.LFE0:
+ 2739              		.align	2
+ 2740              		.global	push_debug
+ 2742              	push_debug:
+ 2743              	.LFB1:
+  30:../pila.c     **** 
+  31:../pila.c     **** 
+  32:../pila.c     **** void push_debug(int ID_evento, int auxData){
+ 2744              		.loc 1 32 0
+ 2745              		.cfi_startproc
+ 2746              		@ Function supports interworking.
+ 2747              		@ args = 0, pretend = 0, frame = 8
+ 2748              		@ frame_needed = 1, uses_anonymous_args = 0
+ 2749 002c 0DC0A0E1 		mov	ip, sp
+ 2750              	.LCFI2:
+ 2751              		.cfi_def_cfa_register 12
+ 2752 0030 10D82DE9 		stmfd	sp!, {r4, fp, ip, lr, pc}
+ 2753 0034 04B04CE2 		sub	fp, ip, #4
+ 2754              		.cfi_offset 14, -8
+ 2755              		.cfi_offset 13, -12
+ 2756              		.cfi_offset 11, -16
+ 2757              		.cfi_offset 4, -20
+ 2758              	.LCFI3:
+ 2759              		.cfi_def_cfa 11, 4
+ 2760 0038 0CD04DE2 		sub	sp, sp, #12
+ 2761 003c 18000BE5 		str	r0, [fp, #-24]
+ 2762 0040 1C100BE5 		str	r1, [fp, #-28]
+  33:../pila.c     **** 	if(actual+3>limite){
+ 2763              		.loc 1 33 0
+ 2764 0044 A4309FE5 		ldr	r3, .L6
+ 2765 0048 003093E5 		ldr	r3, [r3, #0]
+ 2766 004c 0C2083E2 		add	r2, r3, #12
+ 2767 0050 9C309FE5 		ldr	r3, .L6+4
+ 2768 0054 003093E5 		ldr	r3, [r3, #0]
+ 2769 0058 030052E1 		cmp	r2, r3
+ 2770 005c 0400009A 		bls	.L5
+  34:../pila.c     **** 		actual=inicioPila;
+ 2771              		.loc 1 34 0
+ 2772 0060 90309FE5 		ldr	r3, .L6+8
+ 2773 0064 003093E5 		ldr	r3, [r3, #0]
+ 2774 0068 0320A0E1 		mov	r2, r3
+ 2775 006c 7C309FE5 		ldr	r3, .L6
+ 2776 0070 002083E5 		str	r2, [r3, #0]
+ 2777              	.L5:
+  35:../pila.c     **** 	}
+  36:../pila.c     **** 	*actual = Timer0_Leer();
+ 2778              		.loc 1 36 0
+ 2779 0074 74309FE5 		ldr	r3, .L6
+ 2780 0078 004093E5 		ldr	r4, [r3, #0]
+ 2781 007c FEFFFFEB 		bl	Timer0_Leer
+ 2782 0080 0030A0E1 		mov	r3, r0
+ 2783 0084 003084E5 		str	r3, [r4, #0]
+  37:../pila.c     **** 	actual ++;
+ 2784              		.loc 1 37 0
+ 2785 0088 60309FE5 		ldr	r3, .L6
+ 2786 008c 003093E5 		ldr	r3, [r3, #0]
+ 2787 0090 042083E2 		add	r2, r3, #4
+ 2788 0094 54309FE5 		ldr	r3, .L6
+ 2789 0098 002083E5 		str	r2, [r3, #0]
+  38:../pila.c     **** 
+  39:../pila.c     **** 	*actual = ID_evento;
+ 2790              		.loc 1 39 0
+ 2791 009c 4C309FE5 		ldr	r3, .L6
+ 2792 00a0 003093E5 		ldr	r3, [r3, #0]
+ 2793 00a4 18201BE5 		ldr	r2, [fp, #-24]
+ 2794 00a8 002083E5 		str	r2, [r3, #0]
+  40:../pila.c     **** 	actual++;
+ 2795              		.loc 1 40 0
+ 2796 00ac 3C309FE5 		ldr	r3, .L6
+ 2797 00b0 003093E5 		ldr	r3, [r3, #0]
+ 2798 00b4 042083E2 		add	r2, r3, #4
+ 2799 00b8 30309FE5 		ldr	r3, .L6
+ 2800 00bc 002083E5 		str	r2, [r3, #0]
+  41:../pila.c     **** 
+  42:../pila.c     **** 	*actual = auxData;
+ 2801              		.loc 1 42 0
+ 2802 00c0 28309FE5 		ldr	r3, .L6
+ 2803 00c4 003093E5 		ldr	r3, [r3, #0]
+ 2804 00c8 1C201BE5 		ldr	r2, [fp, #-28]
+ 2805 00cc 002083E5 		str	r2, [r3, #0]
+  43:../pila.c     **** 	actual++;
+ 2806              		.loc 1 43 0
+ 2807 00d0 18309FE5 		ldr	r3, .L6
+ 2808 00d4 003093E5 		ldr	r3, [r3, #0]
+ 2809 00d8 042083E2 		add	r2, r3, #4
+ 2810 00dc 0C309FE5 		ldr	r3, .L6
+ 2811 00e0 002083E5 		str	r2, [r3, #0]
+  44:../pila.c     **** }
+ 2812              		.loc 1 44 0
+ 2813 00e4 10D04BE2 		sub	sp, fp, #16
+ 2814 00e8 10689DE8 		ldmfd	sp, {r4, fp, sp, lr}
+ 2815 00ec 1EFF2FE1 		bx	lr
+ 2816              	.L7:
+ 2817              		.align	2
+ 2818              	.L6:
+ 2819 00f0 00000000 		.word	actual
+ 2820 00f4 00000000 		.word	limite
+ 2821 00f8 00000000 		.word	inicioPila
+ 2822              		.cfi_endproc
+ 2823              	.LFE1:
+ 2825              	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 pila.c
+C:\Users\a680182\AppData\Local\Temp\ccMN4uPt.s:2693   .data:00000000 inicioPila
+C:\Users\a680182\AppData\Local\Temp\ccMN4uPt.s:2690   .data:00000000 $d
+C:\Users\a680182\AppData\Local\Temp\ccMN4uPt.s:2699   .data:00000004 limite
+                            *COM*:00000004 actual
+C:\Users\a680182\AppData\Local\Temp\ccMN4uPt.s:2703   .text:00000000 $a
+C:\Users\a680182\AppData\Local\Temp\ccMN4uPt.s:2706   .text:00000000 pila_Init
+C:\Users\a680182\AppData\Local\Temp\ccMN4uPt.s:2734   .text:00000024 $d
+C:\Users\a680182\AppData\Local\Temp\ccMN4uPt.s:2739   .text:0000002c $a
+C:\Users\a680182\AppData\Local\Temp\ccMN4uPt.s:2742   .text:0000002c push_debug
+C:\Users\a680182\AppData\Local\Temp\ccMN4uPt.s:2819   .text:000000f0 $d
+                     .debug_frame:00000010 $d
+
+UNDEFINED SYMBOLS
+Timer0_Leer

@@ -1,0 +1,93 @@
+   1              	# 1 "../rutinas_asm.asm"
+   1              		.global Intercambiar
+   0              	
+   0              	
+   0              	
+   2              	
+   3              	Intercambiar:
+   4 0000 0DC0A0E1 		mov ip,sp
+   5 0004 00D82DE9 		stmdb sp!,{fp,ip,lr,pc}
+   6 0008 04B04CE2 	    sub fp,ip,#4
+   7              	
+   8 000c 811180E0 		add r1, r0, r1, lsl #3     @ r1 <- &(T[i])
+   9 0010 822180E0 		add r2, r0, r2, lsl #3     @ r2 <- &(T[j])
+  10 0014 0030D1E5 		ldrb r3, [r1]              @ r3 <- T[i].prioridad
+  11 0018 00C0D2E5 		ldrb ip, [r2]              @ ip <- T[j].prioridad
+  12 001c 0030C2E5 		strb r3, [r2]              @ T[j].prioridad <- r3
+  13 0020 00C0C1E5 		strb ip, [r1]              @ T[i].prioridad <- ip
+  14 0024 043091E5 		ldr r3,[r1,#4]             @ r3 <- T[i].id
+  15 0028 04C092E5 	    ldr ip,[r2,#4]             @ ip <- T[j].id
+  16 002c 043082E5 	    str r3,[r2,#4]             @ T[j].id <- r3
+  17 0030 04C081E5 	    str ip,[r1,#4]             @ T[i].id <- ip
+  18              	
+  19 0034 00A81BE9 		ldmdb fp,{fp,sp,pc}
+  20              	
+  21              		.global SeleccionarPID
+  22              	
+  23              	SeleccionarPID:
+  24 0038 0DC0A0E1 		mov ip,sp
+  25 003c 00D82DE9 		stmdb sp!,{fp,ip,lr,pc}
+  26 0040 04B04CE2 		sub fp,ip,#4
+  27              	
+  28 0044 00C0A0E3 		mov ip,#0
+  29              	LOOP1:
+  30 0048 0CE1D0E7 		ldrb lr,[r0,ip,lsl #2]
+  31 004c 03005EE1 		cmp lr, r3
+  32 0050 01005CB1 		cmplt ip, r1
+  33 0054 01C08CB2 		addlt ip,ip,#1
+  34 0058 FAFFFFBA 		blt LOOP1
+  35              	
+  36 005c 0CE041E0 		sub lr,r1,ip
+  37 0060 00E082E5 		str lr,[r2]
+  38              		
+  39 0064 01005CE1 		cmp ip, r1
+  40 0068 0000A003 		moveq r0, #0
+  41 006c 0C018010 		addne r0, r0, ip, lsl #2
+  42              	
+  43 0070 00A81BE9 		ldmdb fp,{fp,sp,pc}
+  44              	
+  45              		.extern PosMinPrioridad
+  46              		.extern Intercambiar
+  47              		.global OrdenaPorPrioridad
+  48              	
+  49              	OrdenaPorPrioridad:
+  50 0074 0DC0A0E1 		mov ip,sp
+  51 0078 10D82DE9 		stmdb sp!,{r4,fp,ip,lr,pc}
+  52 007c 04B04CE2 		sub fp,ip,#4
+  53 0080 08D04DE2 		sub sp, sp, #8
+  54              	
+  55 0084 10000BE5 		str r0,[fp,#-16]
+  56 0088 14100BE5 		str r1,[fp,#-20]
+  57              	
+  58 008c 0040A0E3 		mov r4,#0
+  59              	LOOP2:
+  60 0090 14201BE5 		ldr r2,[fp,#-20]
+  61 0094 020054E1 		cmp r4,r2
+  62 0098 080000AA 		bge B1
+  63              		
+  64 009c 10001BE5 		ldr r0, [fp,#-16]
+  65 00a0 0410A0E1 		mov r1, r4
+  66 00a4 FEFFFFEB 		bl PosMinPrioridad
+  67 00a8 0020A0E1 		mov r2, r0
+  68 00ac 0410A0E1 		mov r1, r4
+  69 00b0 10001BE5 		ldr r0, [fp,#-16]
+  70 00b4 FEFFFFEB 		bl Intercambiar
+  71 00b8 014084E2 		add r4, r4, #1
+  72 00bc F3FFFFEA 		b LOOP2
+  73              	
+  74              	B1:
+  75 00c0 10A81BE9 		ldmdb fp,{r4,fp,sp,pc}
+  76              		
+  77              	.end
+DEFINED SYMBOLS
+  ../rutinas_asm.asm:3      .text:00000000 Intercambiar
+  ../rutinas_asm.asm:4      .text:00000000 $a
+  ../rutinas_asm.asm:23     .text:00000038 SeleccionarPID
+  ../rutinas_asm.asm:29     .text:00000048 LOOP1
+  ../rutinas_asm.asm:49     .text:00000074 OrdenaPorPrioridad
+  ../rutinas_asm.asm:59     .text:00000090 LOOP2
+  ../rutinas_asm.asm:74     .text:000000c0 B1
+                   .debug_aranges:0000000c $d
+
+UNDEFINED SYMBOLS
+PosMinPrioridad

@@ -1,0 +1,154 @@
+   1              		.cpu arm7tdmi
+   2              		.fpu softvfp
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 6
+  10              		.eabi_attribute 18, 4
+  11              		.file	"main.c"
+  21              	.Ltext0:
+  22              		.file 1 "../main.c"
+ 2871              		.align	2
+ 2872              		.global	Main
+ 2874              	Main:
+ 2875              	.LFB0:
+   1:../main.c     **** /*********************************************************************************************
+   2:../main.c     **** * Fichero:	main.c
+   3:../main.c     **** * Autor:
+   4:../main.c     **** * Descrip:	punto de entrada de C
+   5:../main.c     **** * Version:  <P4-ARM.timer-leds>
+   6:../main.c     **** *********************************************************************************************/
+   7:../main.c     **** 
+   8:../main.c     **** /*--- ficheros de cabecera ---*/
+   9:../main.c     **** #include "44blib.h"
+  10:../main.c     **** #include "44b.h"
+  11:../main.c     **** #include "stdio.h"
+  12:../main.c     **** 
+  13:../main.c     **** /*--- variables globales ---*/
+  14:../main.c     **** extern int switch_leds;
+  15:../main.c     **** extern int switch_8led;
+  16:../main.c     **** 
+  17:../main.c     **** /*--- funciones externas ---*/
+  18:../main.c     **** extern void leds_off();
+  19:../main.c     **** extern void led1_on();
+  20:../main.c     **** extern void leds_switch();
+  21:../main.c     **** extern void timer_init();
+  22:../main.c     **** extern void Eint4567_init();
+  23:../main.c     **** extern void D8Led_init();
+  24:../main.c     **** extern void exception_init();
+  25:../main.c     **** extern void Timer2_Inicializar();
+  26:../main.c     **** extern int Timer2_Leer();
+  27:../main.c     **** extern void Timer2_Empezar();
+  28:../main.c     **** extern void Timer3_Empezar();
+  29:../main.c     **** extern void D8Led_symbol(int value);
+  30:../main.c     **** extern void push_debug(int ID_evento, int auxData);
+  31:../main.c     **** extern void pila_Init();
+  32:../main.c     **** extern void Timer3_Inicializar(void);
+  33:../main.c     **** extern void Timer0_Empezar(void);
+  34:../main.c     **** extern void juegoSudoku();
+  35:../main.c     **** 
+  36:../main.c     **** /*--- declaracion de funciones ---*/
+  37:../main.c     **** void Main(void);
+  38:../main.c     **** 
+  39:../main.c     **** /*--- codigo de funciones ---*/
+  40:../main.c     **** void Main(void)
+  41:../main.c     **** {
+ 2876              		.loc 1 41 0
+ 2877              		.cfi_startproc
+ 2878              		@ Function supports interworking.
+ 2879              		@ args = 0, pretend = 0, frame = 0
+ 2880              		@ frame_needed = 1, uses_anonymous_args = 0
+ 2881 0000 0DC0A0E1 		mov	ip, sp
+ 2882              	.LCFI0:
+ 2883              		.cfi_def_cfa_register 12
+ 2884 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 2885 0008 04B04CE2 		sub	fp, ip, #4
+ 2886              		.cfi_offset 14, -8
+ 2887              		.cfi_offset 13, -12
+ 2888              		.cfi_offset 11, -16
+ 2889              	.LCFI1:
+ 2890              		.cfi_def_cfa 11, 4
+  42:../main.c     **** 
+  43:../main.c     **** 	exception_init();
+ 2891              		.loc 1 43 0
+ 2892 000c FEFFFFEB 		bl	exception_init
+  44:../main.c     **** 	/* Inicializa controladores */
+  45:../main.c     **** 	sys_init();        // Inicializacion de la placa, interrupciones y puertos
+ 2893              		.loc 1 45 0
+ 2894 0010 FEFFFFEB 		bl	sys_init
+  46:../main.c     **** 	timer_init();	   // Inicializacion del temporizador
+ 2895              		.loc 1 46 0
+ 2896 0014 FEFFFFEB 		bl	timer_init
+  47:../main.c     **** 	Eint4567_init();	// inicializamos los pulsadores. Cada vez que se pulse se verá reflejado en el 8l
+ 2897              		.loc 1 47 0
+ 2898 0018 FEFFFFEB 		bl	Eint4567_init
+  48:../main.c     **** 	D8Led_init(); // inicializamos el 8led
+ 2899              		.loc 1 48 0
+ 2900 001c FEFFFFEB 		bl	D8Led_init
+  49:../main.c     **** 	Timer2_Inicializar(); /* Configura el Timer2 */
+ 2901              		.loc 1 49 0
+ 2902 0020 FEFFFFEB 		bl	Timer2_Inicializar
+  50:../main.c     **** 	Timer3_Inicializar(); /* Configura el Timer2 */
+ 2903              		.loc 1 50 0
+ 2904 0024 FEFFFFEB 		bl	Timer3_Inicializar
+  51:../main.c     **** 	pila_Init();
+ 2905              		.loc 1 51 0
+ 2906 0028 FEFFFFEB 		bl	pila_Init
+  52:../main.c     **** 	/* Valor inicial de los leds */
+  53:../main.c     **** 	leds_off();
+ 2907              		.loc 1 53 0
+ 2908 002c FEFFFFEB 		bl	leds_off
+  54:../main.c     **** 	led1_on();
+ 2909              		.loc 1 54 0
+ 2910 0030 FEFFFFEB 		bl	led1_on
+  55:../main.c     **** 	Timer0_Empezar();
+ 2911              		.loc 1 55 0
+ 2912 0034 FEFFFFEB 		bl	Timer0_Empezar
+  56:../main.c     **** 
+  57:../main.c     **** 
+  58:../main.c     **** 	Timer2_Empezar();
+ 2913              		.loc 1 58 0
+ 2914 0038 FEFFFFEB 		bl	Timer2_Empezar
+  59:../main.c     **** 	juegoSudoku();
+ 2915              		.loc 1 59 0
+ 2916 003c FEFFFFEB 		bl	juegoSudoku
+  60:../main.c     **** 	push_debug(0xFFFFFFFF,Timer2_Leer());
+ 2917              		.loc 1 60 0
+ 2918 0040 FEFFFFEB 		bl	Timer2_Leer
+ 2919 0044 0030A0E1 		mov	r3, r0
+ 2920 0048 0000E0E3 		mvn	r0, #0
+ 2921 004c 0310A0E1 		mov	r1, r3
+ 2922 0050 FEFFFFEB 		bl	push_debug
+ 2923              	.L2:
+  61:../main.c     **** 
+  62:../main.c     **** 	while(1);
+ 2924              		.loc 1 62 0 discriminator 1
+ 2925 0054 FEFFFFEA 		b	.L2
+ 2926              		.cfi_endproc
+ 2927              	.LFE0:
+ 2929              	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\a680182\AppData\Local\Temp\ccsnkfv9.s:2871   .text:00000000 $a
+C:\Users\a680182\AppData\Local\Temp\ccsnkfv9.s:2874   .text:00000000 Main
+                     .debug_frame:00000010 $d
+
+UNDEFINED SYMBOLS
+exception_init
+sys_init
+timer_init
+Eint4567_init
+D8Led_init
+Timer2_Inicializar
+Timer3_Inicializar
+pila_Init
+leds_off
+led1_on
+Timer0_Empezar
+Timer2_Empezar
+juegoSudoku
+Timer2_Leer
+push_debug

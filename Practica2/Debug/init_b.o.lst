@@ -1,0 +1,880 @@
+   1              	# 1 "../init_b.asm"
+   1              	.text
+   0              	
+   0              	
+   0              	
+   2              	#        ENTRY                  /*  mark the first instruction to call */
+   3              	.global start
+   4              	//.global sudoku_recalcular_arm_c
+   5              	.global sudoku_candidatos_arm
+   6              	.global	sudoku_candidatos_thumb
+   7              	.extern index_reticula
+   8              	start:
+   9              	.arm /*indicates that we are using the ARM instruction set */
+  10              	#------standard initial code
+  11              	# --- Setup interrupt / exception vectors
+  12 0000 FFFFFFEA 	      B       Reset_Handler
+  13              	/* In this version we do not use the following handlers */
+  14              	###################################################################################################
+  15              	#-----------Undefined_Handler:
+  16              	#      B       Undefined_Handler
+  17              	#----------SWI_Handler:
+  18              	#      B       SWI_Handler
+  19              	#----------Prefetch_Handler:
+  20              	#      B       Prefetch_Handler
+  21              	#----------Abort_Handler:
+  22              	#      B       Abort_Handler
+  23              	#         NOP      /* Reserved vector */
+  24              	#----------IRQ_Handler:
+  25              	#      B       IRQ_Handler
+  26              	#----------FIQ_Handler:
+  27              	#      B       FIQ_Handler
+  28              	###################################################################################################
+  29              	# Reset Handler:
+  30              	# the processor starts executing this code after system reset
+  31              	###################################################################################################
+  32              	Reset_Handler:
+  33              	#
+  34 0004 01D9A0E3 	        MOV     sp, #0x4000      /*  set up stack pointer (r13) */
+  35              	#
+  36              	#  USING A .C FUNCTION
+  37              	#
+  38              	# FUNCTION CALL the parameters are stored in r0 and r1
+  39              	# If there are 4 or less parameters when calling a C function the compiler assumes that they have
+  40              	# been stored in r0-r3. If there are more parameters you have to store them in the data stack using
+  41              	# function __c_copy is in copy.c
+  42              	
+  43              	.extern     sudoku9x9_c_c
+  44              	.extern     sudoku9x9_c_arm
+  45              	.extern     sudoku9x9_c_thumb
+  46              	.extern     sudoku_candidatos_c
+  47              	.extern		comprobar
+  48              	
+  49 0008 80039FE5 		LDR     r0, =cuadricula_arm_arm  
+  50 000c 80539FE5 		LDR     r5, =cuadricula
+  51 0010 80639FE5 		LDR     r6, = comprobar
+  52              	
+  53              		/*
+  54              		mov r7,#0
+  55              	buc:
+  56              	
+  57              	     LDR     r0, =cuadricula_c_thumb  
+  58              	     LDR         r2, = sudoku9x9_c_thumb
+  59              	     mov         lr, pc
+  60              	     bx          r2
+  61              	
+  62              	
+  63              	
+  64              		add r7,r7,#1
+  65              		cmp r7,#2000
+  66              		bne buc
+  67              	
+  68              	
+  69              	
+  70              	     bl          sudoku_recalcular_arm_arm
+  71              		mov r1,r5
+  72              	
+  73              		LDR     r0, =cuadricula_arm_arm  /*  puntero a la cuadricula */
+  74 0014 0FE0A0E1 	     mov         lr, pc
+  75 0018 16FF2FE1 	     bx          r6
+  76              	
+  77              	
+  78              	
+  79              	
+  80              	
+  81              	
+  82 001c 78039FE5 		LDR     r0, =cuadricula_arm_thumb  /*  puntero a la cuadricula */
+  83 0020 350000EB 	     bl          sudoku_recalcular_arm_thumb
+  84 0024 0510A0E1 		mov r1,r5
+  85              	
+  86 0028 6C039FE5 	     LDR     r0, =cuadricula_arm_thumb  /*  puntero a la cuadricula */
+  87 002c 0FE0A0E1 		mov         lr, pc
+  88 0030 16FF2FE1 	     bx          r6
+  89              	
+  90              	
+  91              	
+  92              	
+  93              	
+  94 0034 64039FE5 	     LDR     r0, =cuadricula_arm_c  /*  puntero a la cuadricula */
+  95 0038 470000EB 	     bl          sudoku_recalcular_arm_c
+  96 003c 0510A0E1 		mov r1,r5
+  97              	
+  98 0040 58039FE5 	     LDR     r0, =cuadricula_arm_c  /*  puntero a la cuadricula */
+  99 0044 0FE0A0E1 		mov         lr, pc
+ 100 0048 16FF2FE1 	     	bx          r6
+ 101              	
+ 102              	
+ 103              	
+ 104              	
+ 105 004c 50039FE5 	        LDR     r0, =cuadricula_c_c  /*  puntero a la cuadricula */
+ 106 0050 50239FE5 	        ldr         r2, = sudoku9x9_c_c
+ 107 0054 0FE0A0E1 	        mov         lr, pc
+ 108 0058 12FF2FE1 	        bx          r2
+ 109 005c 0510A0E1 			mov r1,r5
+ 110              	
+ 111 0060 3C039FE5 	        LDR     r0, =cuadricula_c_c  /*  puntero a la cuadricula */
+ 112 0064 0FE0A0E1 			mov         lr, pc
+ 113 0068 16FF2FE1 	        bx          r6
+ 114              	
+ 115              	
+ 116              	
+ 117              	
+ 118              	
+ 119 006c 38039FE5 	        LDR     r0, =cuadricula_c_arm  /*  puntero a la cuadricula */
+ 120 0070 38239FE5 	        ldr         r2, = sudoku9x9_c_arm
+ 121 0074 0FE0A0E1 	        mov         lr, pc
+ 122 0078 12FF2FE1 	        bx          r2
+ 123 007c 0510A0E1 	        mov r1,r5
+ 124              	
+ 125 0080 24039FE5 	        LDR     r0, =cuadricula_c_arm  /*  puntero a la cuadricula */
+ 126 0084 0FE0A0E1 	        mov         lr, pc
+ 127 0088 16FF2FE1 	        bx          r6
+ 128              	
+ 129              	
+ 130              	
+ 131              	
+ 132 008c 20039FE5 	        LDR     r0, =cuadricula_c_thumb  /*  puntero a la cuadricula */
+ 133 0090 20239FE5 	        ldr         r2, = sudoku9x9_c_thumb
+ 134 0094 0FE0A0E1 	        mov         lr, pc
+ 135 0098 12FF2FE1 	        bx          r2
+ 136 009c 0510A0E1 	        mov r1,r5
+ 137              	
+ 138 00a0 0C039FE5 	        LDR     r0, =cuadricula_c_thumb  /*  puntero a la cuadricula */
+ 139 00a4 0FE0A0E1 	        mov         lr, pc
+ 140 00a8 16FF2FE1 	        bx          r6
+ 141              	
+ 142              	
+ 143              	
+ 144              	stop:
+ 145 00ac FEFFFFEA 	        B       stop        /*  end of program */
+ 146              	
+ 147              	
+ 148              	
+ 149              	
+ 150              	sudoku_recalcular_arm_arm:
+ 151 00b0 F0402DE9 		STMFD   sp!, {r14,r4-r7} //Se apilan los registros que se van a usar
+ 152 00b4 0070A0E1 		mov r7,r0
+ 153 00b8 0060A0E3 		mov r6,#0 			   //vacías = 0
+ 154 00bc 0040A0E3 		mov r4,#0	              //i = 0
+ 155              	SRAA_BucleI:
+ 156 00c0 0050A0E3 		mov r5,#0		 	   //j = 0
+ 157              	SRAA_BucleJ:
+ 158 00c4 0700A0E1 		mov r0,r7	              //Se preparan los paramentos de la función
+ 159 00c8 0410A0E1 		mov r1,r4
+ 160 00cc 0520A0E1 		mov r2,r5
+ 161 00d0 FEFFFFEB 		bl sudoku_candidatos_arm //se llama a la función
+ 162 00d4 010050E3 		cmp r0,#1		         //se comprueba el resultado
+ 163 00d8 01608612 		addne r6,r6,#1		   //se aumenta el contador si estaba vacía
+ 164 00dc 015085E2 		add r5,r5,#1	         //se aumenta el índice del bucle y se vuelve 
+ 165              	   //a evaluar
+ 166 00e0 090055E3 		cmp r5,#9
+ 167 00e4 F6FFFF1A 		bne SRAA_BucleJ
+ 168 00e8 014084E2 		add r4,r4,#1		   //se aumenta el índice del bucle y se vuelve 
+ 169              	   //a evaluar
+ 170 00ec 090054E3 		cmp r4,#9
+ 171 00f0 F2FFFF1A 		bne SRAA_BucleI
+ 172              	
+ 173 00f4 0600A0E1 		mov r0,r6			   //devuelve el número de casillas escritas
+ 174 00f8 F040BDE8 		LDMFD   sp!, {r14,r4-r7} //se desapilan los registros usados
+ 175              	
+ 176              	
+ 177              	
+ 178              	//-------------------------------------------------------------
+ 179              	
+ 180              	sudoku_recalcular_arm_thumb:
+ 181 00fc F0012DE9 		STMFD   sp!, {r4-r8}	//Se apilan los registros que se van a usar
+ 182 0100 0070A0E1 		mov r7,r0
+ 183 0104 0060A0E3 		mov r6,#0 			//vacías = 0
+ 184 0108 0040A0E3 		mov r4,#0			//i = 0
+ 185              	SRAT_BucleI:
+ 186 010c 0050A0E3 		mov r5,#0			//j = 0
+ 187              	SRAT_BucleJ:
+ 188 0110 0700A0E1 		mov r0,r7			//Se preparan los paramentos de la función
+ 189 0114 0410A0E1 		mov r1,r4
+ 190 0118 0520A0E1 		mov r2,r5
+ 191 011c 98829FE5 		ldr r8,=sudoku_candidatos_thumb+1
+ 192 0120 04E02DE5 		PUSH	{r14}
+ 193 0124 94E29FE5 		ldr r14,=regreso
+ 194 0128 18FF2FE1 		bx r8
+ 195              	regreso:
+ 196 012c 04E09DE4 		POP	{r14}
+ 197 0130 010050E3 		cmp r0,#1			//se comprueba el resultado
+ 198 0134 01608612 		addne r6,r6,#1		//se aumenta el contador si estaba vacía
+ 199 0138 015085E2 		add r5,r5,#1		//se aumenta el índice del bucle y se vuelve 
+ 200              	//a evaluar
+ 201 013c 090055E3 		cmp r5,#9
+ 202 0140 F2FFFF1A 		bne SRAT_BucleJ
+ 203 0144 014084E2 		add r4,r4,#1		//se aumenta el índice del bucle y se vuelve 
+ 204              	//a evaluar
+ 205 0148 090054E3 		cmp r4,#9
+ 206 014c EEFFFF1A 		bne SRAT_BucleI
+ 207              	
+ 208 0150 0600A0E1 	mov r0,r6			//devuelve el número de casillas escritas
+ 209 0154 F001BDE8 		LDMFD   sp!, {r4-r8}	//se desapilan los registros usados
+ 210 0158 1EFF2FE1 		BX      r14
+ 211              	
+ 212              	
+ 213              	//-------------------------------------------------------------
+ 214              	
+ 215              		sudoku_recalcular_arm_c:
+ 216 015c F0402DE9 		STMFD   sp!, {r14,r4-r7} //Se apilan los registros que se van a usar
+ 217 0160 0070A0E1 		mov r7,r0
+ 218 0164 0060A0E3 		mov r6,#0 			   //vacías = 0
+ 219 0168 0040A0E3 		mov r4,#0			   //i = 0
+ 220              	SRAC_BucleI:
+ 221 016c 0050A0E3 		mov r5,#0			   //j = 0
+ 222              	SRAC_BucleJ:
+ 223 0170 0700A0E1 		mov r0,r7			   //Se preparan los paramentos de la función
+ 224 0174 0410A0E1 		mov r1,r4
+ 225 0178 0520A0E1 		mov r2,r5
+ 226 017c FEFFFFEB 		bl sudoku_candidatos_c   //se llama a la función
+ 227 0180 010050E3 		cmp r0,#1			    //se comprueba el resultado
+ 228 0184 01608612 		addne r6,r6,#1	         //se aumenta el contador si estaba vacía
+ 229 0188 015085E2 		add r5,r5,#1	         //se aumenta el índice del bucle y se vuelve   
+ 230              	    //a evaluar
+ 231 018c 090055E3 		cmp r5,#9
+ 232 0190 F6FFFF1A 		bne SRAC_BucleJ
+ 233 0194 014084E2 		add r4,r4,#1	         //se aumenta el índice del bucle y se vuelve 
+ 234              	    //a evaluar
+ 235 0198 090054E3 		cmp r4,#9
+ 236 019c F2FFFF1A 		bne SRAC_BucleI
+ 237 01a0 F040BDE8 		LDMFD   sp!, {r14,r4-r7}	//se desapilan los registros usados
+ 238 01a4 1EFF2FE1 		BX      r14
+ 239              	
+ 240              	
+ 241              	sudoku_candidatos_arm:
+ 242 01a8 F0072DE9 		STMFD   sp!, {r4-r10}	//Se apilan los registros que se van a usar
+ 243 01ac FF30A0E3 		mov r3,#0x0FF
+ 244 01b0 013C83E3 		orr r3, r3, #0x100	//candidatos = #0x01FF
+ 245 01b4 0050A0E3 		mov r5,#0	// i = 0
+ 246 01b8 0190A0E3 		mov r9,#1
+ 247              	SCA_BucleI1:
+ 248 01bc 0040A0E3 		mov r4,#0			//se inicializa r4 a 0
+ 249 01c0 814280E0 		add r4,r0,r1,LSL #5	//32 Byte por fila
+ 250 01c4 854084E0 		add r4,r4,r5,LSL #1	//Dirección del elemento. 2 Byte por columna 
+ 251              	//y 32 por columna
+ 252 01c8 B040D4E1 		ldrh r4,[r4]		//elemento de la celda
+ 253 01cc 2446A0E1 		mov r4,r4,LSR #12	//valor del elemento de la celda
+ 254 01d0 000054E3 		cmp r4,#0
+ 255 01d4 01404412 		subne r4,r4,#1
+ 256 01d8 1944E011 		mvnne r4,r9,LSL r4  	//r4 = ~(1<<(valor-1))
+ 257 01dc 03300410 		andne r3,r4,r3		//candidatos = (~(1<<(valor-1))) $ candidatos
+ 258 01e0 015085E2 		add r5,r5,#1
+ 259 01e4 090055E3 		cmp r5,#9
+ 260 01e8 F3FFFF1A 		bne SCA_BucleI1		
+ 261 01ec 0050A0E3 		mov r5,#0			// i = 0
+ 262              	SCA_BucleI2:
+ 263 01f0 0040A0E3 		mov r4,#0			//se inicializa r4 a 0
+ 264 01f4 854280E0 		add r4,r0,r5,LSL #5	//32 Byte por fila
+ 265 01f8 824084E0 		add r4,r4,r2,LSL #1	//Dirección del elemento. 2 Byte por columna 
+ 266              	//y 32 por columna
+ 267 01fc B040D4E1 		ldrh r4,[r4]		//elemento de la celda
+ 268 0200 2446A0E1 		mov r4,r4,LSR #12	//valor del elemento de la celda
+ 269 0204 000054E3 		cmp r4,#0
+ 270 0208 01404412 		subne r4,r4,#1
+ 271 020c 1944E011 		mvnne r4,r9,LSL r4	//r4 = ~(1<<(valor-1))
+ 272 0210 03300410 		andne r3,r4,r3		//candidatos=(~(1<<(valor-1))) $ candidatos
+ 273 0214 015085E2 		add r5,r5,#1
+ 274 0218 090055E3 		cmp r5,#9
+ 275 021c F3FFFF1A 		bne SCA_BucleI2		//se aumenta el índice del bucle y se vuelve 
+ 276              	//a evaluar
+ 277              	
+ 278              	
+ 279 0220 0050A0E3 		mov r5,#0			// i = 0
+ 280              	
+ 281 0224 98A19FE5 		ldr r10,=index_reticula
+ 282 0228 0160DAE7 		ldrb r6,[r10,r1]
+ 283 022c 0650A0E1 		mov r5,r6
+ 284              	
+ 285              	SCA_BucleI3:
+ 286              	
+ 287 0230 0270DAE7 		ldrb r7,[r10,r2]
+ 288 0234 0780A0E1 		mov r8,r7
+ 289              	
+ 290              	SCA_BucleJ:
+ 291 0238 0190A0E3 		mov r9,#1
+ 292 023c 0040A0E3 		mov r4,#0			//se inicializa r4 a 0
+ 293 0240 854280E0 		add r4,r0,r5,LSL #5	//32 Byte por fila
+ 294 0244 884084E0 		add r4,r4,r8,LSL #1	//Dirección del elemento. 2 Byte por columna 
+ 295              	//y 32 por columna
+ 296 0248 B040D4E1 		ldrh r4,[r4]		//elemento de la celda
+ 297 024c 2446A0E1 		mov r4,r4,LSR #12	//valor del elemento de la celda
+ 298 0250 000054E3 		cmp r4,#0
+ 299 0254 01404412 		subne r4,r4,#1
+ 300 0258 1944E011 		mvnne r4,r9,LSL r4  	//r4 = ~(1<<(valor-1))
+ 301 025c 03300410 		andne r3,r4,r3		//candidatos = (~(1<<(valor-1))) $ candidatos
+ 302 0260 018088E2 		add r8,r8,#1
+ 303 0264 090058E3 		cmp r8,#9
+ 304 0268 0300000A 		beq salida
+ 305 026c 0890DAE7 		ldrb r9,[r10,r8]
+ 306 0270 090057E1 		cmp r7,r9
+ 307 0274 0000001A 		bne salida
+ 308 0278 EEFFFFEA 		b SCA_BucleJ		//se aumenta el índice del bucle y se vuelve 
+ 309              	//a evaluar
+ 310              	
+ 311              	salida:
+ 312 027c 015085E2 		add r5,r5,#1
+ 313 0280 0590DAE7 		ldrb r9,[r10,r5]
+ 314 0284 090056E1 		cmp r6,r9
+ 315 0288 E8FFFF0A 		beq SCA_BucleI3
+ 316              	
+ 317              	
+ 318              	
+ 319 028c 0040A0E3 		mov r4,#0			//se inicializa r4 a 0
+ 320 0290 814280E0 		add r4,r0,r1,LSL #5	//32 Byte por fila
+ 321 0294 824084E0 		add r4,r4,r2,LSL #1	//Dirección del elemento. 2 Byte por columna y 32 por columna
+ 322 0298 B050D4E1 		ldrh r5,[r4]		//elemento de la celda
+ 323 029c 2566A0E1 		mov r6,r5,LSR #12
+ 324 02a0 036085E1 		orr r6,r5,r3
+ 325 02a4 B060C4E1 		strh r6,[r4]
+ 326              	
+ 327 02a8 0F5A05E2 		and r5,r5,#0xF000
+ 328 02ac 000055E3 		cmp r5,#0			//Devuelve 0 si r5=0, 1 en caso contrario
+ 329 02b0 0100A013 		movne r0,#1
+ 330 02b4 0000A003 		moveq r0,#0
+ 331              	
+ 332 02b8 F007BDE8 		LDMFD   sp!, {r4-r10}	//se desapilan los registros usados
+ 333 02bc 1EFF2FE1 		BX      r14
+ 334              	
+ 335              	
+ 336              	.thumb
+ 337              	sudoku_candidatos_thumb:
+ 338 02c0 F0B4     		PUSH	{r4-r7}	//Se apilan los registros que se van a usar
+ 339 02c2 FF23     		mov r3,#0x0FF
+ 340 02c4 0124     		mov r4,#1
+ 341 02c6 2402     		LSL r4,r4,#8
+ 342 02c8 2343     		orr r3,r3,r4	//candidatos = #0x01FF
+ 343 02ca 0025     		mov r5,#0		// i = 0
+ 344              	SCT_BucleI1:
+ 345 02cc 0024     		mov r4,#0		//se inicializa r4 a 0
+ 346 02ce 4F01     		LSL r7,r1,#5
+ 347 02d0 C419     		add r4,r0,r7	//32 Byte por fila
+ 348 02d2 6F00     		LSL r7,r5,#1
+ 349 02d4 E419     		add r4,r4,r7	//Dirección del elemento. 2 Byte por columna y 32 por columna
+ 350 02d6 2488     		ldrh r4,[r4]	//elemento de la celda
+ 351 02d8 240B     		LSR r4,r4,#12	//valor del elemento de la celda
+ 352 02da 002C     		cmp r4,#0
+ 353 02dc 04D0     		beq SCT_If1
+ 354 02de 013C     		sub r4,r4,#1
+ 355 02e0 0126     		mov r6,#1
+ 356 02e2 A640     		LSL r6,r6,r4
+ 357 02e4 F443     		mvn r4,r6  	//r4 = ~(1<<(valor-1))
+ 358 02e6 2340     		and r3,r4,r3	//candidatos = (~(1<<(valor-1))) $ candidatos
+ 359              	SCT_If1:
+ 360 02e8 0135     		add r5,r5,#1
+ 361 02ea 092D     		cmp r5,#9
+ 362 02ec EED1     		bne SCT_BucleI1	//se aumenta el índice del bucle y se vuelve 
+ 363              	//a evaluar
+ 364              	
+ 365              	
+ 366 02ee 0025     		mov r5,#0		// i = 0
+ 367              	
+ 368              	SCT_BucleI2:
+ 369 02f0 0024     		mov r4,#0		//se inicializa r4 a 0
+ 370              	
+ 371 02f2 6F01     		LSL r7,r5,#5
+ 372 02f4 C419     		add r4,r0,r7	//32 Byte por fila
+ 373 02f6 5700     		LSL r7,r2,#1
+ 374 02f8 E419     		add r4,r4,r7	//Dirección del elemento. 2 Byte por columna y 32 por columna
+ 375 02fa 2488     		ldrh r4,[r4]	//elemento de la celda
+ 376 02fc 240B     		LSR r4,r4,#12	//valor del elemento de la celda
+ 377 02fe 002C     		cmp r4,#0
+ 378 0300 04D0     		beq SCT_If2
+ 379 0302 013C     		sub r4,r4,#1
+ 380 0304 0126     		mov r6,#1
+ 381 0306 A640     		LSL r6,r6,r4
+ 382 0308 F443     		mvn r4,r6  	//r4 = ~(1<<(valor-1))
+ 383 030a 2340     		and r3,r4,r3	//candidatos = (~(1<<(valor-1))) $ candidatos
+ 384              	SCT_If2:
+ 385 030c 0135     		add r5,r5,#1
+ 386 030e 092D     		cmp r5,#9
+ 387 0310 EED1     		bne SCT_BucleI2	//se aumenta el índice del bucle y se vuelve 
+ 388              	//a evaluar
+ 389              	
+ 390              	
+ 391 0312 0025     		mov r5,#0		// i = 0
+ 392 0314 2B4F     		ldr r7,=index_reticula
+ 393 0316 7E5C     		ldrb r6,[r7,r1]
+ 394 0318 351C     		mov r5,r6
+ 395              	
+ 396              	SCT_BucleI3:
+ 397 031a 2A4F     		ldr r7,=index_reticula
+ 398 031c BF5C     		ldrb r7,[r7,r2]
+ 399 031e 80B4     		PUSH	{r7}
+ 400              	SCT_BucleJ:
+ 401 0320 0024     		mov r4,#0		//se inicializa r4 a 0
+ 402 0322 06B4     		PUSH	{r1,r2}
+ 403 0324 6901     		LSL r1,r5,#5
+ 404 0326 4418     		add r4,r0,r1	//32 Byte por fila
+ 405 0328 7900     		LSL r1,r7,#1
+ 406 032a 6418     		add r4,r4,r1	//Dirección del elemento. 2 Byte por columna y 32 por columna
+ 407 032c 2488     		ldrh r4,[r4]	//elemento de la celda
+ 408 032e 240B     		LSR r4,r4,#12	//valor del elemento de la celda
+ 409 0330 002C     		cmp r4,#0
+ 410 0332 04D0     		beq SCT_If3
+ 411 0334 013C     		sub r4,r4,#1
+ 412 0336 0121     		mov r1,#1
+ 413 0338 A140     		LSL r1,r1,r4
+ 414 033a CC43     		mvn r4,r1  	//r4 = ~(1<<(valor-1))
+ 415 033c 2340     		and r3,r4,r3	//candidatos = (~(1<<(valor-1))) $ candidatos
+ 416              	SCT_If3:
+ 417 033e 0137     		add r7,r7,#1
+ 418 0340 08B4     		PUSH	{r3}
+ 419 0342 092F     		cmp r7,#9
+ 420 0344 07D0     		beq SCT_Salida
+ 421 0346 1F49     		ldr r1,=index_reticula
+ 422 0348 CB5D     		ldrb r3,[r1,r7]
+ 423 034a 039A     		ldr r2,[sp,#12]
+ 424 034c 9342     		cmp r3,r2
+ 425 034e 02D1     		bne SCT_Salida
+ 426 0350 08BC     		POP	{r3}
+ 427 0352 06BC     		POP	{r1,r2}
+ 428 0354 E4E7     		b SCT_BucleJ	//se aumenta el índice del bucle y se vuelve a evaluar
+ 429              	SCT_Salida:
+ 430              	
+ 431 0356 0135     		add r5,r5,#1
+ 432 0358 1A49     		ldr r1,=index_reticula
+ 433 035a 4A5D     		ldrb r2,[r1,r5]
+ 434 035c 9642     		cmp r6,r2
+ 435 035e 03D1     		bne SCT_Salida2
+ 436 0360 08BC     		POP		{r3}
+ 437 0362 06BC     		POP		{r1,r2}
+ 438 0364 80BC     		POP		{r7}
+ 439 0366 D8E7     		b SCT_BucleI3
+ 440              	SCT_Salida2:
+ 441 0368 08BC     		POP		{r3}
+ 442 036a 06BC     		POP		{r1,r2}
+ 443 036c 80BC     		POP		{r7}
+ 444              	
+ 445 036e 0024     		mov r4,#0		//se inicializa r4 a 0
+ 446 0370 4F01     		LSL r7,r1,#5
+ 447 0372 C419     		add r4,r0,r7	//32 Byte por fila
+ 448 0374 5700     		LSL r7,r2,#1
+ 449 0376 E419     		add r4,r4,r7	//Direccion del elemento. 2 Byte por columna y 32 por columna
+ 450 0378 2588     		ldrh r5,[r4]	//elemento de la celda
+ 451 037a 2E0B     		LSR r6,r5,#12
+ 452 037c 1D43     		orr r5,r3
+ 453 037e 2580     		strh r5,[r4]
+ 454              	
+ 455 0380 002E     		cmp r6,#0
+ 456 0382 02D0     		beq Vacio
+ 457              	
+ 458 0384 0120     		mov r0,#1
+ 459 0386 F0BC     		POP	{r4-r7}	//se desapilan los registros usados
+ 460 0388 7047     		BX      r14
+ 461              	
+ 462              	Vacio:
+ 463 038a 0020     		mov r0,#0
+ 464 038c F0BC     		POP	{r4-r7}	//se desapilan los registros usados
+ 465 038e 7047     		BX      r14
+ 466              	.arm
+ 467              	
+ 468              	###################################################################################################
+ 469              	.data
+ 470              	.ltorg /*guarantees the alignment*/
+ 471              	.align 5
+ 472              	
+ 473              	
+ 474              	# huecos para cuadrar
+ 475              	cuadricula:
+ 476              	     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+ 477 0000 18981668 	    .hword   0x9818,0x6816,0x001C,0x0006,0x0003,0x0001,0x780A,0x0011,0x880B,0,0,0,0,0,0,0
+ 477      1C000600 
+ 477      03000100 
+ 477      0A781100 
+ 477      0B880000 
+ 478 0020 10885200 	    .hword   0x8810,0x0052,0x0010,0x0162,0x0063,0x4861,0x3902,0x0131,0x0103,0,0,0,0,0,0,0
+ 478      10006201 
+ 478      63006148 
+ 478      02393101 
+ 478      03010000 
+ 479 0040 08184600 	    .hword   0x1808,0x0046,0x000C,0x59E6,0x00E2,0x00E0,0x010A,0x0120,0x010A,0,0,0,0,0,0,0
+ 479      0C00E659 
+ 479      E200E000 
+ 479      0A012001 
+ 479      0A010000 
+ 480 0060 18001401 	    .hword   0x0018,0x0114,0x011C,0x008A,0x009A,0x0080,0x198A,0x7984,0x690E,0,0,0,0,0,0,0
+ 480      1C018A00 
+ 480      9A008000 
+ 480      8A198479 
+ 480      0E690000 
+ 481 0080 28280100 	    .hword   0x2828,0x0001,0x0028,0x00E8,0x98E9,0x38E1,0x0088,0x0080,0x5808,0,0,0,0,0,0,0
+ 481      2800E800 
+ 481      E998E138 
+ 481      88008000 
+ 481      08580000 
+ 482 00a0 38781501 	    .hword   0x7838,0x0115,0x893C,0x002A,0x003B,0x0021,0x010A,0x0104,0x010E,0,0,0,0,0,0,0
+ 482      3C892A00 
+ 482      3B002100 
+ 482      0A010401 
+ 482      0E010000 
+ 483 00c0 30001001 	    .hword   0x0030,0x0110,0x7930,0x00A0,0x38A0,0x28A0,0x0180,0x4981,0x0101,0,0,0,0,0,0,0
+ 483      3079A000 
+ 483      A038A028 
+ 483      80018149 
+ 483      01010000 
+ 484 00e0 00380089 	    .hword   0x3800,0x8900,0x2900,0x1848,0x0048,0x5840,0x6900,0x0100,0x0140,0,0,0,0,0,0,0
+ 484      00294818 
+ 484      48004058 
+ 484      00690001 
+ 484      40010000 
+ 485 0100 20000048 	    .hword   0x0020,0x4800,0x1820,0x00E0,0x00E0,0x98E0,0x5880,0x2884,0x0044,0,0,0,0,0,0,0
+ 485      2018E000 
+ 485      E000E098 
+ 485      80588428 
+ 485      44000000 
+ 486              	
+ 487              	
+ 488              	
+ 489              	
+ 490              	
+ 491              	# huecos para cuadrar
+ 492              	cuadricula_arm_arm:
+ 493              	     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+ 494 0120 00980068 	    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+ 494      00000000 
+ 494      00000000 
+ 494      00780000 
+ 494      00880000 
+ 495 0140 00880000 	    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+ 495      00000000 
+ 495      00000048 
+ 495      00380000 
+ 495      00000000 
+ 496 0160 00180000 	    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 496      00000058 
+ 496      00000000 
+ 496      00000000 
+ 496      00000000 
+ 497 0180 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+ 497      00000000 
+ 497      00000000 
+ 497      00180078 
+ 497      00680000 
+ 498 01a0 00280000 	    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+ 498      00000000 
+ 498      00980038 
+ 498      00000000 
+ 498      00580000 
+ 499 01c0 00780000 	    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 499      00880000 
+ 499      00000000 
+ 499      00000000 
+ 499      00000000 
+ 500 01e0 00000000 	    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+ 500      00780000 
+ 500      00380028 
+ 500      00000048 
+ 500      00000000 
+ 501 0200 00380088 	    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+ 501      00280018 
+ 501      00000058 
+ 501      00680000 
+ 501      00000000 
+ 502 0220 00000048 	    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+ 502      00180000 
+ 502      00000098 
+ 502      00580028 
+ 502      00000000 
+ 503              	
+ 504              	
+ 505              	
+ 506              	cuadricula_arm_thumb:
+ 507              	     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+ 508 0240 00980068 	    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+ 508      00000000 
+ 508      00000000 
+ 508      00780000 
+ 508      00880000 
+ 509 0260 00880000 	    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+ 509      00000000 
+ 509      00000048 
+ 509      00380000 
+ 509      00000000 
+ 510 0280 00180000 	    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 510      00000058 
+ 510      00000000 
+ 510      00000000 
+ 510      00000000 
+ 511 02a0 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+ 511      00000000 
+ 511      00000000 
+ 511      00180078 
+ 511      00680000 
+ 512 02c0 00280000 	    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+ 512      00000000 
+ 512      00980038 
+ 512      00000000 
+ 512      00580000 
+ 513 02e0 00780000 	    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 513      00880000 
+ 513      00000000 
+ 513      00000000 
+ 513      00000000 
+ 514 0300 00000000 	    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+ 514      00780000 
+ 514      00380028 
+ 514      00000048 
+ 514      00000000 
+ 515 0320 00380088 	    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+ 515      00280018 
+ 515      00000058 
+ 515      00680000 
+ 515      00000000 
+ 516 0340 00000048 	    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+ 516      00180000 
+ 516      00000098 
+ 516      00580028 
+ 516      00000000 
+ 517              	
+ 518              	
+ 519              	cuadricula_arm_c:
+ 520              	     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+ 521 0360 00980068 	    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+ 521      00000000 
+ 521      00000000 
+ 521      00780000 
+ 521      00880000 
+ 522 0380 00880000 	    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+ 522      00000000 
+ 522      00000048 
+ 522      00380000 
+ 522      00000000 
+ 523 03a0 00180000 	    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 523      00000058 
+ 523      00000000 
+ 523      00000000 
+ 523      00000000 
+ 524 03c0 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+ 524      00000000 
+ 524      00000000 
+ 524      00180078 
+ 524      00680000 
+ 525 03e0 00280000 	    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+ 525      00000000 
+ 525      00980038 
+ 525      00000000 
+ 525      00580000 
+ 526 0400 00780000 	    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 526      00880000 
+ 526      00000000 
+ 526      00000000 
+ 526      00000000 
+ 527 0420 00000000 	    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+ 527      00780000 
+ 527      00380028 
+ 527      00000048 
+ 527      00000000 
+ 528 0440 00380088 	    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+ 528      00280018 
+ 528      00000058 
+ 528      00680000 
+ 528      00000000 
+ 529 0460 00000048 	    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+ 529      00180000 
+ 529      00000098 
+ 529      00580028 
+ 529      00000000 
+ 530              	
+ 531              	
+ 532              	
+ 533              	
+ 534              	cuadricula_c_arm:
+ 535              	     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+ 536 0480 00980068 	    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+ 536      00000000 
+ 536      00000000 
+ 536      00780000 
+ 536      00880000 
+ 537 04a0 00880000 	    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+ 537      00000000 
+ 537      00000048 
+ 537      00380000 
+ 537      00000000 
+ 538 04c0 00180000 	    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 538      00000058 
+ 538      00000000 
+ 538      00000000 
+ 538      00000000 
+ 539 04e0 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+ 539      00000000 
+ 539      00000000 
+ 539      00180078 
+ 539      00680000 
+ 540 0500 00280000 	    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+ 540      00000000 
+ 540      00980038 
+ 540      00000000 
+ 540      00580000 
+ 541 0520 00780000 	    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 541      00880000 
+ 541      00000000 
+ 541      00000000 
+ 541      00000000 
+ 542 0540 00000000 	    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+ 542      00780000 
+ 542      00380028 
+ 542      00000048 
+ 542      00000000 
+ 543 0560 00380088 	    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+ 543      00280018 
+ 543      00000058 
+ 543      00680000 
+ 543      00000000 
+ 544 0580 00000048 	    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+ 544      00180000 
+ 544      00000098 
+ 544      00580028 
+ 544      00000000 
+ 545              	
+ 546              	
+ 547              	
+ 548              	cuadricula_c_thumb:
+ 549              	     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+ 550 05a0 00980068 	    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+ 550      00000000 
+ 550      00000000 
+ 550      00780000 
+ 550      00880000 
+ 551 05c0 00880000 	    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+ 551      00000000 
+ 551      00000048 
+ 551      00380000 
+ 551      00000000 
+ 552 05e0 00180000 	    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 552      00000058 
+ 552      00000000 
+ 552      00000000 
+ 552      00000000 
+ 553 0600 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+ 553      00000000 
+ 553      00000000 
+ 553      00180078 
+ 553      00680000 
+ 554 0620 00280000 	    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+ 554      00000000 
+ 554      00980038 
+ 554      00000000 
+ 554      00580000 
+ 555 0640 00780000 	    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 555      00880000 
+ 555      00000000 
+ 555      00000000 
+ 555      00000000 
+ 556 0660 00000000 	    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+ 556      00780000 
+ 556      00380028 
+ 556      00000048 
+ 556      00000000 
+ 557 0680 00380088 	    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+ 557      00280018 
+ 557      00000058 
+ 557      00680000 
+ 557      00000000 
+ 558 06a0 00000048 	    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+ 558      00180000 
+ 558      00000098 
+ 558      00580028 
+ 558      00000000 
+ 559              	
+ 560              	
+ 561              	cuadricula_c_c:
+ 562              	     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+ 563 06c0 00980068 	    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+ 563      00000000 
+ 563      00000000 
+ 563      00780000 
+ 563      00880000 
+ 564 06e0 00880000 	    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+ 564      00000000 
+ 564      00000048 
+ 564      00380000 
+ 564      00000000 
+ 565 0700 00180000 	    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 565      00000058 
+ 565      00000000 
+ 565      00000000 
+ 565      00000000 
+ 566 0720 00000000 	    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+ 566      00000000 
+ 566      00000000 
+ 566      00180078 
+ 566      00680000 
+ 567 0740 00280000 	    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+ 567      00000000 
+ 567      00980038 
+ 567      00000000 
+ 567      00580000 
+ 568 0760 00780000 	    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+ 568      00880000 
+ 568      00000000 
+ 568      00000000 
+ 568      00000000 
+ 569 0780 00000000 	    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+ 569      00780000 
+ 569      00380028 
+ 569      00000048 
+ 569      00000000 
+ 570 07a0 00380088 	    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+ 570      00280018 
+ 570      00000058 
+ 570      00680000 
+ 570      00000000 
+ 571 07c0 00000048 	    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+ 571      00180000 
+ 571      00000098 
+ 571      00580028 
+ 571      00000000 
+ 572              	
+ 573              	.end
+DEFINED SYMBOLS
+       ../init_b.asm:8      .text:00000000 start
+       ../init_b.asm:241    .text:000001a8 sudoku_candidatos_arm
+       ../init_b.asm:337    .text:000002c0 sudoku_candidatos_thumb
+       ../init_b.asm:32     .text:00000004 Reset_Handler
+       ../init_b.asm:12     .text:00000000 $a
+       ../init_b.asm:492    .data:00000120 cuadricula_arm_arm
+       ../init_b.asm:475    .data:00000000 cuadricula
+       ../init_b.asm:506    .data:00000240 cuadricula_arm_thumb
+       ../init_b.asm:180    .text:000000fc sudoku_recalcular_arm_thumb
+       ../init_b.asm:519    .data:00000360 cuadricula_arm_c
+       ../init_b.asm:215    .text:0000015c sudoku_recalcular_arm_c
+       ../init_b.asm:561    .data:000006c0 cuadricula_c_c
+       ../init_b.asm:534    .data:00000480 cuadricula_c_arm
+       ../init_b.asm:548    .data:000005a0 cuadricula_c_thumb
+       ../init_b.asm:144    .text:000000ac stop
+       ../init_b.asm:150    .text:000000b0 sudoku_recalcular_arm_arm
+       ../init_b.asm:155    .text:000000c0 SRAA_BucleI
+       ../init_b.asm:157    .text:000000c4 SRAA_BucleJ
+       ../init_b.asm:185    .text:0000010c SRAT_BucleI
+       ../init_b.asm:187    .text:00000110 SRAT_BucleJ
+       ../init_b.asm:195    .text:0000012c regreso
+       ../init_b.asm:220    .text:0000016c SRAC_BucleI
+       ../init_b.asm:222    .text:00000170 SRAC_BucleJ
+       ../init_b.asm:247    .text:000001bc SCA_BucleI1
+       ../init_b.asm:262    .text:000001f0 SCA_BucleI2
+       ../init_b.asm:285    .text:00000230 SCA_BucleI3
+       ../init_b.asm:290    .text:00000238 SCA_BucleJ
+       ../init_b.asm:311    .text:0000027c salida
+       ../init_b.asm:338    .text:000002c0 $t
+       ../init_b.asm:344    .text:000002cc SCT_BucleI1
+       ../init_b.asm:359    .text:000002e8 SCT_If1
+       ../init_b.asm:368    .text:000002f0 SCT_BucleI2
+       ../init_b.asm:384    .text:0000030c SCT_If2
+       ../init_b.asm:396    .text:0000031a SCT_BucleI3
+       ../init_b.asm:400    .text:00000320 SCT_BucleJ
+       ../init_b.asm:416    .text:0000033e SCT_If3
+       ../init_b.asm:429    .text:00000356 SCT_Salida
+       ../init_b.asm:440    .text:00000368 SCT_Salida2
+       ../init_b.asm:462    .text:0000038a Vacio
+       ../init_b.asm:466    .text:00000390 $d
+       ../init_b.asm:471    .data:00000000 $d
+                   .debug_aranges:0000000c $d
+
+UNDEFINED SYMBOLS
+comprobar
+sudoku9x9_c_c
+sudoku9x9_c_arm
+sudoku9x9_c_thumb
+sudoku_candidatos_c
+index_reticula

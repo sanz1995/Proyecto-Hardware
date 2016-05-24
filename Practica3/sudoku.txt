@@ -1,0 +1,590 @@
+/*
+ * sudoku.c
+ *
+ *  Created on: 18/11/2015
+ *      Author: a680182
+ */
+
+
+#include <inttypes.h>
+#include "lcd.h"
+
+extern int empezar;
+extern int confirmacion;
+extern int comparacion;
+extern unsigned int int_count;
+extern int reset;
+extern void D8Led_symbol(int_count);
+extern void Lcd_Init();
+extern void Lcd_Active_Clr();
+// Tamaños de la cuadricula
+// Se utilizan 16 columnas para facilitar la visualización
+enum {NUM_FILAS = 9, NUM_COLUMNAS = 16};
+// Definiciones para valores muy utilizados
+//enum {FALSE = 0, TRUE = 1};
+
+typedef uint16_t CELDA;
+// La información de cada celda está codificada en 16 bits
+// con el siguiente formato (empezando en el bit más significativo):
+// 4 MSB VALOR
+// 1 bit PISTA
+// 1 bit ERROR
+// 1 bit no usado
+// 9 LSB CANDIDATOS
+
+typedef INT8U TEXTO[2];
+
+enum {BIT_ERROR_POS = 10};
+
+const uint8_t index_reticula[9]={0,0,0,3,3,3,6,6,6};
+
+const TEXTO traduccion[]={"0","1","2","3","4","5","6","7","8","9",{0x7,'\0'}};
+
+const char digitos[]={'0','1','2','3','4','5','6','7','8','9'};
+
+const CELDA original[NUM_FILAS][NUM_COLUMNAS]=
+		{0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0,
+	    0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0,
+	    0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0,
+	    0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0,
+	    0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0,
+	    0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0,
+	    0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0,
+	    0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0,
+	    0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0};
+
+CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]=
+		{0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0,
+	    0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0,
+	    0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0,
+	    0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0,
+	    0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0,
+	    0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0,
+	    0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0,
+	    0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0,
+	    0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0};
+
+
+int tiempoCalculos;
+int tiempoTotal;
+
+extern void Timer0_Empezar();
+extern int Timer0_Leer();
+extern void Timer2_Empezar();
+extern int Timer2_Leer();
+
+
+// modifica el valor almacenado en la celda indicada
+inline void
+celda_poner_valor(CELDA *celdaptr, uint8_t val) {
+    *celdaptr = (*celdaptr & 0x0FFF) | ((val & 0x000F) << 12);
+}
+
+
+
+
+// lee el valor almacenado en la celda indicada
+inline uint8_t
+celda_leer_valor(CELDA celda) {
+    return (celda >> 12);
+}
+
+
+// funcion a implementar en ARM
+extern int
+sudoku_recalcular_arm_arm(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]);
+
+// funcion a implementar en ARM
+extern int
+sudoku_recalcular_arm_thumb(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]);
+
+// funcion a implementar en ARM
+extern int
+sudoku_recalcular_arm_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]);
+
+// funcion a implementar en ARM
+extern int
+sudoku_candidatos_arm(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS],
+                        uint8_t fila, uint8_t columna);
+
+// funcion a implementar en Thumb
+extern int
+sudoku_candidatos_thumb(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS],
+                        uint8_t fila, uint8_t columna);
+
+
+////////////////////////////////////////////////////////////////////////////////
+// dada una determinada celda encuentra los posibles valores candidatos
+// y guarda el mapa de bits en la celda
+// retorna false si la celda esta vacia, true si contiene un valor
+int					// 48 lineas de codigo		1480 instrucciones
+sudoku_candidatos_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS],
+                   uint8_t fila, uint8_t columna) {
+    // iniciar candidatos
+	uint16_t candidatos=0x01FF;
+	uint8_t valor;
+    // recorrer fila recalculando candidatos
+	int i=0;
+	while(i<NUM_FILAS){
+		valor=celda_leer_valor(cuadricula[fila][i]);
+		if((valor!=0) & (i!=columna)){
+			candidatos=(~(1<<(valor-1))) & candidatos;
+		}
+		i++;
+	}
+    // recorrer columna recalculando candidatos
+	i=0;
+	while(i<NUM_FILAS){
+		valor=celda_leer_valor(cuadricula[i][columna]);
+		if((valor!=0) & (i!=fila)){
+			candidatos=(~(1<<(valor-1))) & candidatos;
+		}
+		i++;
+	}
+    // recorrer region recalculando candidatos
+	int bloqueF=index_reticula[fila];
+	i=bloqueF;
+	while(index_reticula[i]==bloqueF){
+		int bloqueC=index_reticula[columna];
+		int j=bloqueC;
+		while((index_reticula[j]==bloqueC) & (j<NUM_FILAS)){
+			valor=celda_leer_valor(cuadricula[i][j]);
+			if((valor!=0) & !((i==fila) & (j==columna))){
+				candidatos=(~(1<<(valor-1))) & candidatos;
+			}
+			j++;
+		}
+		i++;
+	}
+
+
+
+	cuadricula[fila][columna]=(cuadricula[fila][columna] & 0xFE00) | candidatos;
+
+	valor=celda_leer_valor(cuadricula[fila][columna]);
+
+	if(valor!=0){
+		int mascaraValor=1<<(valor-1);
+		//si el valor no esta en candidatos se marca el bit de error
+		if(!(mascaraValor & candidatos)){
+			cuadricula[fila][columna]=cuadricula[fila][columna] | (1 << BIT_ERROR_POS);
+		}else{
+			cuadricula[fila][columna]=cuadricula[fila][columna] & (~((CELDA)1 << BIT_ERROR_POS));
+		}
+	}
+
+    // retornar indicando si la celda tiene un valor o esta vacia
+    if ( (cuadricula[fila][columna] & 0xF000) != 0) {
+    	return TRUE;
+    }else{
+    	return FALSE;
+    }
+}
+
+int comprobar(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS],
+				CELDA objetivo[NUM_FILAS][NUM_COLUMNAS]){
+	//para cada fila
+	int i=0;
+	while(i<NUM_FILAS){
+		//para cada columna
+		int j=0;
+		while(j<NUM_FILAS){
+			//determinar candidatos
+			if(cuadricula[i][j]!=objetivo[i][j]){
+				//actualizar contador de celdas vacias
+				return FALSE;
+			}
+			j++;
+		}
+		i++;
+	}
+	return TRUE;
+
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// recalcula todo el tablero (9x9)
+// retorna el numero de celdas vacias
+int
+sudoku_recalcular_c_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]) {
+
+
+
+	int error=0;
+	int vacias=0;
+	//para cada fila
+	int i=0;
+	while(i<NUM_FILAS){
+		//para cada columna
+		int j=0;
+		while(j<NUM_FILAS){
+			//determinar candidatos
+			if(!sudoku_candidatos_c(cuadricula,i,j) & error==0){
+				//actualizar contador de celdas vacias
+				vacias++;
+			}
+			if(cuadricula[i][j] & 0x400){
+				error=1;
+				vacias=-1;
+			}
+
+			j++;
+		}
+		i++;
+	}
+    //retornar el numero de celdas vacias
+    return vacias;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// recalcula todo el tablero (9x9)
+// retorna el numero de celdas vacias
+int
+sudoku_recalcular_c_arm(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]) {
+	int vacias=0;
+	//para cada fila
+	int i=0;
+	while(i<NUM_FILAS){
+		//para cada columna
+		int j=0;
+		while(j<NUM_FILAS){
+			//determinar candidatos
+			if(!sudoku_candidatos_arm(cuadricula,i,j)){
+				//actualizar contador de celdas vacias
+				vacias++;
+			}
+			j++;
+		}
+		i++;
+	}
+    //retornar el numero de celdas vacias
+    return vacias;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// recalcula todo el tablero (9x9)
+// retorna el numero de celdas vacias
+int
+sudoku_recalcular_c_thumb(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]) {
+	int vacias=0;
+	//para cada fila
+	int i=0;
+	while(i<NUM_FILAS){
+		//para cada columna
+		int j=0;
+		while(j<NUM_FILAS){
+			//determinar candidatos
+			if(!(sudoku_candidatos_thumb+1)(cuadricula,i,j)){
+				//actualizar contador de celdas vacias
+				vacias++;
+			}
+			j++;
+		}
+		i++;
+	}
+    //retornar el numero de celdas vacias
+    return vacias;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// proceso principal del juego que recibe el tablero,
+// y la señal de ready que indica que se han actualizado fila y columna
+void
+sudoku9x9_c_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready) {
+    int celdas_vacias;     //numero de celdas aun vacias
+
+    celdas_vacias = sudoku_recalcular_c_c(cuadricula);
+
+
+    if(celdas_vacias==0){
+    	*ready='Y';
+    }else{
+    	*ready='N';
+    }
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// proceso principal del juego que recibe el tablero,
+// y la señal de ready que indica que se han actualizado fila y columna
+void
+sudoku9x9_c_arm(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready) {
+    int celdas_vacias;     //numero de celdas aun vacias
+
+    celdas_vacias = sudoku_recalcular_c_arm(cuadricula);
+
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// proceso principal del juego que recibe el tablero,
+// y la señal de ready que indica que se han actualizado fila y columna
+void
+sudoku9x9_c_thumb(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready) {
+    int celdas_vacias;     //numero de celdas aun vacias
+
+    celdas_vacias = sudoku_recalcular_c_thumb(cuadricula);
+
+}
+
+void pintarTablero(){
+
+	int posicionX1=10;
+	int posicionY1=30;
+
+	int posicionX2=posicionX1+180;
+	int posicionY2=posicionY1+180;
+
+
+
+
+
+	Lcd_Clr();
+	Lcd_Active_Clr();
+
+	Lcd_Draw_HLine(posicionX1,posicionX2,posicionY1+0,BLACK,3);
+	Lcd_Draw_HLine(posicionX1,posicionX2,posicionY1+20,BLACK,1);
+	Lcd_Draw_HLine(posicionX1,posicionX2,posicionY1+40,BLACK,1);
+	Lcd_Draw_HLine(posicionX1,posicionX2,posicionY1+60,BLACK,3);
+	Lcd_Draw_HLine(posicionX1,posicionX2,posicionY1+80,BLACK,1);
+	Lcd_Draw_HLine(posicionX1,posicionX2,posicionY1+100,BLACK,1);
+	Lcd_Draw_HLine(posicionX1,posicionX2,posicionY1+120,BLACK,3);
+	Lcd_Draw_HLine(posicionX1,posicionX2,posicionY1+140,BLACK,1);
+	Lcd_Draw_HLine(posicionX1,posicionX2,posicionY1+160,BLACK,1);
+	Lcd_Draw_HLine(posicionX1,posicionX2,posicionY1+180,BLACK,3);
+
+
+	Lcd_Draw_VLine(posicionY1,posicionY2,posicionX1+0,BLACK,3);
+	Lcd_Draw_VLine(posicionY1,posicionY2,posicionX1+20,BLACK,1);
+	Lcd_Draw_VLine(posicionY1,posicionY2,posicionX1+40,BLACK,1);
+	Lcd_Draw_VLine(posicionY1,posicionY2,posicionX1+60,BLACK,3);
+	Lcd_Draw_VLine(posicionY1,posicionY2,posicionX1+80,BLACK,1);
+	Lcd_Draw_VLine(posicionY1,posicionY2,posicionX1+100,BLACK,1);
+	Lcd_Draw_VLine(posicionY1,posicionY2,posicionX1+120,BLACK,3);
+	Lcd_Draw_VLine(posicionY1,posicionY2,posicionX1+140,BLACK,1);
+	Lcd_Draw_VLine(posicionY1,posicionY2,posicionX1+160,BLACK,1);
+	Lcd_Draw_VLine(posicionY1,posicionY2,posicionX1+180,BLACK,3);
+
+
+	int x=posicionX1+8;
+	int i=0;
+	int valor;
+	int mascara;
+	while(i<NUM_FILAS){
+		int j=0;
+		int y=posicionY1+4;
+		while(j<NUM_FILAS){
+
+			valor=celda_leer_valor(cuadricula[i][j]);
+			if(valor!=0){
+				mascara=1<<11;
+				if(mascara & cuadricula[i][j]){
+					Lcd_DspAscII8x16(x,y,BLACK,traduccion[valor]);
+				}else{
+					Lcd_DspAscII8x16(x,y,DARKGRAY,traduccion[valor]);
+				}
+				mascara=1<<10;
+				if(mascara & cuadricula[i][j]){
+					ReverseSquare(x-5, y-1, x+9, y+14);
+				}
+
+			}else{
+				int n=0;
+				while(n<9){
+					mascara=1<<n;
+					if(mascara & cuadricula[i][j]){
+						//Lcd_DspAscII8x16(x+2*(n%3),y+2*(n/3),BLACK,traduccion[10]);
+						Lcd_Dot(x-3+5*(n%3),y+5*(n/3));
+					}
+					n++;
+				}
+			}
+			y+=20;
+			j++;
+		}
+		x+=20;
+		i++;
+	}
+	i=0;
+	int pos=posicionY1+4;
+	while(i<NUM_FILAS){
+		Lcd_DspAscII8x16(posicionX2+6,pos+i*20,BLACK,traduccion[i+1]);
+		i++;
+	}
+
+	i=0;
+	pos=posicionX1+8;
+	while(i<NUM_FILAS){
+		Lcd_DspAscII8x16(pos+i*20,posicionY2+4,BLACK,traduccion[i+1]);
+		i++;
+	}
+
+	INT8U text1[]={"T. Total = "};
+
+	Lcd_DspAscII8x16(10,5,BLACK,text1);
+
+	INT8U text2[]={"T. Calculo = "};
+
+	Lcd_DspAscII8x16(160,5,BLACK,text2);
+
+	Lcd_Dma_Trans();
+
+	INT8U text3[]={"Introduce"};
+
+	INT8U text4[]={"la fila A"};
+
+	INT8U text5[]={"para acabar."};
+
+	Lcd_DspAscII8x16(230,80,BLACK,text3);
+	Lcd_DspAscII8x16(230,100,BLACK,text4);
+	Lcd_DspAscII8x16(230,120,BLACK,text5);
+
+}
+
+
+void actualizarHora(int hora1,int hora2){
+	LcdClrRect(100, 5, 150, 25, WHITE);
+	//Lcd_Clr();
+	//Lcd_Active_Clr();
+
+	int min=(hora1/60)%100;
+	int seg=hora1%60;
+
+	INT8U text1[]={digitos[min/10],digitos[min%10],':',digitos[seg/10],digitos[seg%10],'\0'};
+	Lcd_DspAscII8x16(100,5,BLACK,text1);
+
+
+	LcdClrRect(260, 5, 320, 25, WHITE);
+
+	if(hora2>9999){
+		hora2=hora2/1000;
+
+		min=(hora2/60)%100;
+		seg=hora2%60;
+
+		INT8U text2[]={digitos[min/10],digitos[min%10],':',digitos[seg/10],digitos[seg%10],'\0'};
+		Lcd_DspAscII8x16(260,5,BLACK,text2);
+
+
+	}else{
+		INT8U text2[]={digitos[hora2/1000],digitos[(hora2/100)%10],digitos[(hora2/10)%10],digitos[hora2%10],'\0'};
+		Lcd_DspAscII8x16(260,5,BLACK,text2);
+	}
+
+	Lcd_Dma_Trans();
+}
+
+void reiniciarTablero(CELDA cuadricula1[NUM_FILAS][NUM_COLUMNAS],CELDA cuadricula2[NUM_FILAS][NUM_COLUMNAS]){
+	int i=0;
+	while(i<NUM_FILAS){
+		int j=0;
+		while(j<NUM_FILAS){
+			cuadricula2[i][j]=cuadricula1[i][j];
+			j++;
+		}
+		i++;
+	}
+
+}
+
+
+void juegoSudoku(){
+
+	//sudoku9x9_c_c(cuadricula,&ready); //32 ms
+	//sudoku9x9_c_arm(cuadricula,&ready); //5.7 ms
+	//sudoku9x9_c_thumb(cuadricula,&ready); //7.5 ms
+	//sudoku_recalcular_arm_c(cuadricula); //31.9 ms
+	//sudoku_recalcular_arm_arm(cuadricula); //13 ms
+	//sudoku_recalcular_arm_thumb(cuadricula); //7.3 ms
+
+	Lcd_Init();
+
+	while(1){
+		Lcd_Clr();
+		Lcd_Active_Clr();
+
+		char ready='N';
+
+		sudoku9x9_c_c(cuadricula,&ready);
+
+
+		INT8U text[]={"Pulsa un boton para empezar"};
+		Lcd_DspAscII8x16(50,50,BLACK,text);
+		Lcd_Dma_Trans();
+
+		while(empezar==0);
+
+
+		Timer0_Empezar();
+		Timer2_Empezar();
+
+		tiempoCalculos=0;
+		while(ready!='Y'){
+			pintarTablero();
+			D8Led_symbol(15);
+			int_count=0;
+			comparacion=11;
+			tiempoCalculos+=Timer2_Leer();
+			while(confirmacion==0){
+				if(tiempoTotal!=Timer0_Leer()/1000000){
+					tiempoTotal=Timer0_Leer()/1000000;
+					actualizarHora(tiempoTotal,tiempoCalculos/1000);
+				}
+			}
+			Timer2_Empezar();
+			int fila=int_count;
+			if(fila!=10){
+				comparacion=10;
+				confirmacion=0;
+
+				D8Led_symbol(12);
+				int_count=0;
+				tiempoCalculos+=Timer2_Leer();
+				while(confirmacion==0){
+					if(tiempoTotal!=Timer0_Leer()/1000000){
+						tiempoTotal=Timer0_Leer()/1000000;
+						actualizarHora(tiempoTotal,tiempoCalculos/1000);
+					}
+				}
+				Timer2_Empezar();
+				confirmacion=0;
+				int columna=int_count;
+				int_count=0;
+				reset=0;
+				D8Led_symbol(16);
+				tiempoCalculos+=Timer2_Leer();
+				while(confirmacion==0){
+					if(tiempoTotal!=Timer0_Leer()/1000000){
+						tiempoTotal=Timer0_Leer()/1000000;
+						actualizarHora(tiempoTotal,tiempoCalculos/1000);
+					}
+				}
+				Timer2_Empezar();
+				confirmacion=0;
+				int valor=int_count;
+
+				celda_poner_valor(&cuadricula[columna-1][fila-1],valor);
+
+
+				sudoku9x9_c_c(cuadricula,&ready);
+			}else{
+				ready='Y';
+			}
+		}
+		reiniciarTablero(original,cuadricula);
+		empezar=0;
+		confirmacion=0;
+	}
+
+}

@@ -1,0 +1,575 @@
+.text
+#        ENTRY                  /*  mark the first instruction to call */
+.global start
+//.global sudoku_recalcular_arm_c
+.global sudoku_candidatos_arm
+.global	sudoku_candidatos_thumb
+.extern index_reticula
+start:
+.arm /*indicates that we are using the ARM instruction set */
+#------standard initial code
+# --- Setup interrupt / exception vectors
+      B       Reset_Handler
+/* In this version we do not use the following handlers */
+#######################################################################################################
+#-----------Undefined_Handler:
+#      B       Undefined_Handler
+#----------SWI_Handler:
+#      B       SWI_Handler
+#----------Prefetch_Handler:
+#      B       Prefetch_Handler
+#----------Abort_Handler:
+#      B       Abort_Handler
+#         NOP      /* Reserved vector */
+#----------IRQ_Handler:
+#      B       IRQ_Handler
+#----------FIQ_Handler:
+#      B       FIQ_Handler
+#######################################################################################################
+# Reset Handler:
+# the processor starts executing this code after system reset
+#######################################################################################################
+Reset_Handler:
+#
+        MOV     sp, #0x4000      /*  set up stack pointer (r13) */
+#
+#  USING A .C FUNCTION
+#
+# FUNCTION CALL the parameters are stored in r0 and r1
+# If there are 4 or less parameters when calling a C function the compiler assumes that they have
+# been stored in r0-r3. If there are more parameters you have to store them in the data stack using the stack pointer
+# function __c_copy is in copy.c
+
+.extern     sudoku9x9_c_c
+.extern     sudoku9x9_c_arm
+.extern     sudoku9x9_c_thumb
+.extern     sudoku_candidatos_c
+.extern		comprobar
+
+	LDR     r0, =cuadricula_arm_arm  
+	LDR     r5, =cuadricula
+	LDR     r6, = comprobar
+
+	/*
+	mov r7,#0
+buc:
+
+     LDR     r0, =cuadricula_c_thumb  
+     LDR         r2, = sudoku9x9_c_thumb
+     mov         lr, pc
+     bx          r2
+
+
+
+	add r7,r7,#1
+	cmp r7,#2000
+	bne buc
+	*/ bucle para medir los tiempos
+
+
+
+     bl          sudoku_recalcular_arm_arm
+	mov r1,r5
+
+	LDR     r0, =cuadricula_arm_arm  /*  puntero a la cuadricula */
+     mov         lr, pc
+     bx          r6
+
+
+
+
+
+
+	LDR     r0, =cuadricula_arm_thumb  /*  puntero a la cuadricula */
+     bl          sudoku_recalcular_arm_thumb
+	mov r1,r5
+
+     LDR     r0, =cuadricula_arm_thumb  /*  puntero a la cuadricula */
+	mov         lr, pc
+     bx          r6
+
+
+
+
+
+     LDR     r0, =cuadricula_arm_c  /*  puntero a la cuadricula */
+     bl          sudoku_recalcular_arm_c
+	mov r1,r5
+
+     LDR     r0, =cuadricula_arm_c  /*  puntero a la cuadricula */
+	mov         lr, pc
+     	bx          r6
+
+
+
+
+        LDR     r0, =cuadricula_c_c  /*  puntero a la cuadricula */
+        ldr         r2, = sudoku9x9_c_c
+        mov         lr, pc
+        bx          r2
+		mov r1,r5
+
+        LDR     r0, =cuadricula_c_c  /*  puntero a la cuadricula */
+		mov         lr, pc
+        bx          r6
+
+
+
+
+
+        LDR     r0, =cuadricula_c_arm  /*  puntero a la cuadricula */
+        ldr         r2, = sudoku9x9_c_arm
+        mov         lr, pc
+        bx          r2
+        mov r1,r5
+
+        LDR     r0, =cuadricula_c_arm  /*  puntero a la cuadricula */
+        mov         lr, pc
+        bx          r6
+
+
+
+
+        LDR     r0, =cuadricula_c_thumb  /*  puntero a la cuadricula */
+        ldr         r2, = sudoku9x9_c_thumb
+        mov         lr, pc
+        bx          r2
+        mov r1,r5
+
+        LDR     r0, =cuadricula_c_thumb  /*  puntero a la cuadricula */
+        mov         lr, pc
+        bx          r6
+
+
+
+stop:
+        B       stop        /*  end of program */
+
+
+
+
+sudoku_recalcular_arm_arm:
+	STMFD   sp!, {r14,r4-r7} //Se apilan los registros que se van a usar
+	mov r7,r0
+	mov r6,#0 			   //vacías = 0
+	mov r4,#0	              //i = 0
+SRAA_BucleI:
+	mov r5,#0		 	   //j = 0
+SRAA_BucleJ:
+	mov r0,r7	              //Se preparan los paramentos de la función
+	mov r1,r4
+	mov r2,r5
+	bl sudoku_candidatos_arm //se llama a la función
+	cmp r0,#1		         //se comprueba el resultado
+	addne r6,r6,#1		   //se aumenta el contador si estaba vacía
+	add r5,r5,#1	         //se aumenta el índice del bucle y se vuelve 
+   //a evaluar
+	cmp r5,#9
+	bne SRAA_BucleJ
+	add r4,r4,#1		   //se aumenta el índice del bucle y se vuelve 
+   //a evaluar
+	cmp r4,#9
+	bne SRAA_BucleI
+
+	mov r0,r6			   //devuelve el número de casillas escritas
+	LDMFD   sp!, {r14,r4-r7} //se desapilan los registros usados
+
+
+
+-------------------------------------------------------------
+
+sudoku_recalcular_arm_thumb:
+	STMFD   sp!, {r4-r8}	//Se apilan los registros que se van a usar
+	mov r7,r0
+	mov r6,#0 			//vacías = 0
+	mov r4,#0			//i = 0
+SRAT_BucleI:
+	mov r5,#0			//j = 0
+SRAT_BucleJ:
+	mov r0,r7			//Se preparan los paramentos de la función
+	mov r1,r4
+	mov r2,r5
+	ldr r8,=sudoku_candidatos_thumb+1
+	PUSH	{r14}
+	ldr r14,=regreso
+	bx r8
+regreso:
+	POP	{r14}
+	cmp r0,#1			//se comprueba el resultado
+	addne r6,r6,#1		//se aumenta el contador si estaba vacía
+	add r5,r5,#1		//se aumenta el índice del bucle y se vuelve 
+//a evaluar
+	cmp r5,#9
+	bne SRAT_BucleJ
+	add r4,r4,#1		//se aumenta el índice del bucle y se vuelve 
+//a evaluar
+	cmp r4,#9
+	bne SRAT_BucleI
+
+mov r0,r6			//devuelve el número de casillas escritas
+	LDMFD   sp!, {r4-r8}	//se desapilan los registros usados
+	BX      r14
+
+
+-------------------------------------------------------------
+
+	sudoku_recalcular_arm_c:
+	STMFD   sp!, {r14,r4-r7} //Se apilan los registros que se van a usar
+	mov r7,r0
+	mov r6,#0 			   //vacías = 0
+	mov r4,#0			   //i = 0
+SRAC_BucleI:
+	mov r5,#0			   //j = 0
+SRAC_BucleJ:
+	mov r0,r7			   //Se preparan los paramentos de la función
+	mov r1,r4
+	mov r2,r5
+	bl sudoku_candidatos_c   //se llama a la función
+	cmp r0,#1			    //se comprueba el resultado
+	addne r6,r6,#1	         //se aumenta el contador si estaba vacía
+	add r5,r5,#1	         //se aumenta el índice del bucle y se vuelve   
+    //a evaluar
+	cmp r5,#9
+	bne SRAC_BucleJ
+	add r4,r4,#1	         //se aumenta el índice del bucle y se vuelve 
+    //a evaluar
+	cmp r4,#9
+	bne SRAC_BucleI
+	LDMFD   sp!, {r14,r4-r7}	//se desapilan los registros usados
+	BX      r14
+
+
+sudoku_candidatos_arm:
+	STMFD   sp!, {r4-r10}	//Se apilan los registros que se van a usar
+	mov r3,#0x0FF
+	orr r3, r3, #0x100	//candidatos = #0x01FF
+	mov r5,#0	// i = 0
+	mov r9,#1
+SCA_BucleI1:
+	mov r4,#0			//se inicializa r4 a 0
+	add r4,r0,r1,LSL #5	//32 Byte por fila
+	add r4,r4,r5,LSL #1	//Dirección del elemento. 2 Byte por columna 
+//y 32 por columna
+	ldrh r4,[r4]		//elemento de la celda
+	mov r4,r4,LSR #12	//valor del elemento de la celda
+	cmp r4,#0
+	subne r4,r4,#1
+	mvnne r4,r9,LSL r4  	//r4 = ~(1<<(valor-1))
+	andne r3,r4,r3		//candidatos = (~(1<<(valor-1))) $ candidatos
+	add r5,r5,#1
+	cmp r5,#9
+	bne SCA_BucleI1		
+	mov r5,#0			// i = 0
+SCA_BucleI2:
+	mov r4,#0			//se inicializa r4 a 0
+	add r4,r0,r5,LSL #5	//32 Byte por fila
+	add r4,r4,r2,LSL #1	//Dirección del elemento. 2 Byte por columna 
+//y 32 por columna
+	ldrh r4,[r4]		//elemento de la celda
+	mov r4,r4,LSR #12	//valor del elemento de la celda
+	cmp r4,#0
+	subne r4,r4,#1
+	mvnne r4,r9,LSL r4	//r4 = ~(1<<(valor-1))
+	andne r3,r4,r3		//candidatos=(~(1<<(valor-1))) $ candidatos
+	add r5,r5,#1
+	cmp r5,#9
+	bne SCA_BucleI2		//se aumenta el índice del bucle y se vuelve 
+//a evaluar
+
+
+	mov r5,#0			// i = 0
+
+	ldr r10,=index_reticula
+	ldrb r6,[r10,r1]
+	mov r5,r6
+
+SCA_BucleI3:
+
+	ldrb r7,[r10,r2]
+	mov r8,r7
+
+SCA_BucleJ:
+	mov r9,#1
+	mov r4,#0			//se inicializa r4 a 0
+	add r4,r0,r5,LSL #5	//32 Byte por fila
+	add r4,r4,r8,LSL #1	//Dirección del elemento. 2 Byte por columna 
+//y 32 por columna
+	ldrh r4,[r4]		//elemento de la celda
+	mov r4,r4,LSR #12	//valor del elemento de la celda
+	cmp r4,#0
+	subne r4,r4,#1
+	mvnne r4,r9,LSL r4  	//r4 = ~(1<<(valor-1))
+	andne r3,r4,r3		//candidatos = (~(1<<(valor-1))) $ candidatos
+	add r8,r8,#1
+	cmp r8,#9
+	beq salida
+	ldrb r9,[r10,r8]
+	cmp r7,r9
+	bne salida
+	b SCA_BucleJ		//se aumenta el índice del bucle y se vuelve 
+//a evaluar
+
+salida:
+	add r5,r5,#1
+	ldrb r9,[r10,r5]
+	cmp r6,r9
+	beq SCA_BucleI3
+
+
+
+	mov r4,#0			//se inicializa r4 a 0
+	add r4,r0,r1,LSL #5	//32 Byte por fila
+	add r4,r4,r2,LSL #1	//Dirección del elemento. 2 Byte por columna y 32 por columna
+	ldrh r5,[r4]		//elemento de la celda
+	mov r6,r5,LSR #12
+	orr r6,r5,r3
+	strh r6,[r4]
+
+	and r5,r5,#0xF000
+	cmp r5,#0			//Devuelve 0 si r5=0, 1 en caso contrario
+	movne r0,#1
+	moveq r0,#0
+
+	LDMFD   sp!, {r4-r10}	//se desapilan los registros usados
+	BX      r14
+
+
+.thumb
+sudoku_candidatos_thumb:
+	PUSH	{r4-r7}	//Se apilan los registros que se van a usar
+	mov r3,#0x0FF
+	mov r4,#1
+	LSL r4,r4,#8
+	orr r3,r3,r4	//candidatos = #0x01FF
+	mov r5,#0		// i = 0
+SCT_BucleI1:
+	mov r4,#0		//se inicializa r4 a 0
+	LSL r7,r1,#5
+	add r4,r0,r7	//32 Byte por fila
+	LSL r7,r5,#1
+	add r4,r4,r7	//Dirección del elemento. 2 Byte por columna y 32 por columna
+	ldrh r4,[r4]	//elemento de la celda
+	LSR r4,r4,#12	//valor del elemento de la celda
+	cmp r4,#0
+	beq SCT_If1
+	sub r4,r4,#1
+	mov r6,#1
+	LSL r6,r6,r4
+	mvn r4,r6  	//r4 = ~(1<<(valor-1))
+	and r3,r4,r3	//candidatos = (~(1<<(valor-1))) $ candidatos
+SCT_If1:
+	add r5,r5,#1
+	cmp r5,#9
+	bne SCT_BucleI1	//se aumenta el índice del bucle y se vuelve 
+//a evaluar
+
+
+	mov r5,#0		// i = 0
+
+SCT_BucleI2:
+	mov r4,#0		//se inicializa r4 a 0
+
+	LSL r7,r5,#5
+	add r4,r0,r7	//32 Byte por fila
+	LSL r7,r2,#1
+	add r4,r4,r7	//Dirección del elemento. 2 Byte por columna y 32 por columna
+	ldrh r4,[r4]	//elemento de la celda
+	LSR r4,r4,#12	//valor del elemento de la celda
+	cmp r4,#0
+	beq SCT_If2
+	sub r4,r4,#1
+	mov r6,#1
+	LSL r6,r6,r4
+	mvn r4,r6  	//r4 = ~(1<<(valor-1))
+	and r3,r4,r3	//candidatos = (~(1<<(valor-1))) $ candidatos
+SCT_If2:
+	add r5,r5,#1
+	cmp r5,#9
+	bne SCT_BucleI2	//se aumenta el índice del bucle y se vuelve 
+//a evaluar
+
+
+	mov r5,#0		// i = 0
+	ldr r7,=index_reticula
+	ldrb r6,[r7,r1]
+	mov r5,r6
+
+SCT_BucleI3:
+	ldr r7,=index_reticula
+	ldrb r7,[r7,r2]
+	PUSH	{r7}
+SCT_BucleJ:
+	mov r4,#0		//se inicializa r4 a 0
+	PUSH	{r1,r2}
+	LSL r1,r5,#5
+	add r4,r0,r1	//32 Byte por fila
+	LSL r1,r7,#1
+	add r4,r4,r1	//Dirección del elemento. 2 Byte por columna y 32 por columna
+	ldrh r4,[r4]	//elemento de la celda
+	LSR r4,r4,#12	//valor del elemento de la celda
+	cmp r4,#0
+	beq SCT_If3
+	sub r4,r4,#1
+	mov r1,#1
+	LSL r1,r1,r4
+	mvn r4,r1  	//r4 = ~(1<<(valor-1))
+	and r3,r4,r3	//candidatos = (~(1<<(valor-1))) $ candidatos
+SCT_If3:
+	add r7,r7,#1
+	PUSH	{r3}
+	cmp r7,#9
+	beq SCT_Salida
+	ldr r1,=index_reticula
+	ldrb r3,[r1,r7]
+	ldr r2,[sp,#12]
+	cmp r3,r2
+	bne SCT_Salida
+	POP	{r3}
+	POP	{r1,r2}
+	b SCT_BucleJ	//se aumenta el índice del bucle y se vuelve a evaluar
+SCT_Salida:
+
+	add r5,r5,#1
+	ldr r1,=index_reticula
+	ldrb r2,[r1,r5]
+	cmp r6,r2
+	bne SCT_Salida2
+	POP		{r3}
+	POP		{r1,r2}
+	POP		{r7}
+	b SCT_BucleI3
+SCT_Salida2:
+	POP		{r3}
+	POP		{r1,r2}
+	POP		{r7}
+
+	mov r4,#0		//se inicializa r4 a 0
+	LSL r7,r1,#5
+	add r4,r0,r7	//32 Byte por fila
+	LSL r7,r2,#1
+	add r4,r4,r7	//Direccion del elemento. 2 Byte por columna y 32 por columna
+	ldrh r5,[r4]	//elemento de la celda
+	LSR r6,r5,#12
+	orr r5,r3
+	strh r5,[r4]
+
+	cmp r6,#0
+	beq Vacio
+
+	mov r0,#1
+	POP	{r4-r7}	//se desapilan los registros usados
+	BX      r14
+
+Vacio:
+	mov r0,#0
+	POP	{r4-r7}	//se desapilan los registros usados
+	BX      r14
+.arm
+
+#################################################################################################################
+.data
+.ltorg /*guarantees the alignment*/
+.align 5
+
+
+# huecos para cuadrar
+cuadricula:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9818,0x6816,0x001C,0x0006,0x0003,0x0001,0x780A,0x0011,0x880B,0,0,0,0,0,0,0
+    .hword   0x8810,0x0052,0x0010,0x0162,0x0063,0x4861,0x3902,0x0131,0x0103,0,0,0,0,0,0,0
+    .hword   0x1808,0x0046,0x000C,0x59E6,0x00E2,0x00E0,0x010A,0x0120,0x010A,0,0,0,0,0,0,0
+    .hword   0x0018,0x0114,0x011C,0x008A,0x009A,0x0080,0x198A,0x7984,0x690E,0,0,0,0,0,0,0
+    .hword   0x2828,0x0001,0x0028,0x00E8,0x98E9,0x38E1,0x0088,0x0080,0x5808,0,0,0,0,0,0,0
+    .hword   0x7838,0x0115,0x893C,0x002A,0x003B,0x0021,0x010A,0x0104,0x010E,0,0,0,0,0,0,0
+    .hword   0x0030,0x0110,0x7930,0x00A0,0x38A0,0x28A0,0x0180,0x4981,0x0101,0,0,0,0,0,0,0
+    .hword   0x3800,0x8900,0x2900,0x1848,0x0048,0x5840,0x6900,0x0100,0x0140,0,0,0,0,0,0,0
+    .hword   0x0020,0x4800,0x1820,0x00E0,0x00E0,0x98E0,0x5880,0x2884,0x0044,0,0,0,0,0,0,0
+
+
+
+
+
+# huecos para cuadrar
+cuadricula_arm_arm:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+
+
+cuadricula_arm_thumb:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+
+cuadricula_arm_c:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+
+
+
+cuadricula_c_arm:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+
+
+cuadricula_c_thumb:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+
+cuadricula_c_c:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+.end
+#        END

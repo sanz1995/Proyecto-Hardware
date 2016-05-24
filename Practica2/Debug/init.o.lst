@@ -1,0 +1,58 @@
+   1              	# 1 "../init.asm"
+   1              	
+   0              	
+   0              	
+   0              	
+   2              	    .extern main
+   3              	    .equ STACK, 0x0c7ff000
+   4              		.global __arm_copy_10, __thumb_copy_10
+   5              		.arm
+   6              	start: 
+   7 0000 38D09FE5 	    ldr sp,=STACK
+   8 0004 00B0A0E3 	    mov fp,#0
+   9              	    
+  10 0008 0FE0A0E1 	    mov lr,pc
+  11 000c 30F09FE5 	    ldr pc,=main
+  12              	End:
+  13 0010 FEFFFFEA 	    B End
+  14              	
+  15              	__arm_copy_10:
+  16 0014 0030A0E3 		mov r3,#0
+  17              	bucle:
+  18 0018 040081E5 			str r0, [r1,#4]
+  19 001c 040080E2 			add r0,r0,#4
+  20 0020 013083E2 			add r3,r3,#1
+  21 0024 0A0053E3 			cmp r3,#10
+  22 0028 FAFFFF1A 		bne bucle
+  23 002c 0EF0A0E1 		mov pc,lr
+  24              	.thumb_func
+  25              	__thumb_copy_10:
+  26 0030 2047     		bx r4
+  27 0032 0023     		mov r3,#0
+  28              		bucle2:
+  29 0034 0860     			str r0,[r1]
+  30 0036 0430     			add r0,#4
+  31 0038 0431     			add r1,#4
+  32 003a 0133     			add r3,#1
+  33 003c 0A2B     			cmp r3,#10
+  34 003e F9D1     		bne bucle2
+  35              	
+  36              		.arm
+  37              	
+  38 0040 00F07F0C 		.end
+  38      00000000 
+DEFINED SYMBOLS
+         ../init.asm:3      *ABS*:0c7ff000 STACK
+         ../init.asm:15     .text:00000014 __arm_copy_10
+         ../init.asm:25     .text:00000030 __thumb_copy_10
+         ../init.asm:6      .text:00000000 start
+         ../init.asm:7      .text:00000000 $a
+         ../init.asm:12     .text:00000010 End
+         ../init.asm:17     .text:00000018 bucle
+         ../init.asm:26     .text:00000030 $t
+         ../init.asm:28     .text:00000034 bucle2
+         ../init.asm:36     .text:00000040 $d
+                   .debug_aranges:0000000c $d
+
+UNDEFINED SYMBOLS
+main
